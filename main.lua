@@ -145,7 +145,7 @@ local function doHop()
                     print("Trying server " .. selected.id .. " (" .. selected.playing .. "/" .. selected.maxPlayers .. ")")
                     
                     -- === SELF-QUEUE MAGIC: No string duplication! ===
-                    queueFunc(loadstring(game:HttpGet("https://raw.githubusercontent.com/yourusername/yourrepo/main/serverhop_script.lua"))())
+                    queueFunc(loadstring(game:HttpGet("https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"))())
                     
                     local tpOk, err = pcall(function()
                         TPService:TeleportToPlaceInstance(PlaceId, selected.id, Players.LocalPlayer, {hopCount = currentHop + 1})
