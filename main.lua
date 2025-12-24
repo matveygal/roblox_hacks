@@ -130,19 +130,20 @@ local function doHop()
         if success and body and body.data then
             local servers = {}
             for _, server in pairs(body.data) do
-                if server.id ~= game.JobId 
-                    and server.playing >= MinPlayers 
-                    and server.playing <= MaxPlayersAllowed 
-                    and server.playing < server.maxPlayers then
+                if server.id ~= game.JobId and server.playing >= MinPlayers and server.playing <= MaxPlayersAllowed then
+                    -- REMOVED: and server.playing < server.maxPlayers
+                    -- Some servers may not return maxPlayers reliably, causing nil errors
                     table.insert(servers, server)
                 end
             end
             
             if #servers > 0 then
-                table.sort(servers, function(a,b) return a.playing > b.playing end)
+                table.sort(servers, function(a,b) return (a.playing or 0) > (b.playing or 0) end)  -- Safe sort
                 
                 for _, selected in ipairs(servers) do
-                    print("Trying server " .. selected.id .. " (" .. selected.playing .. "/" .. selected.maxPlayers .. ")")
+                    local playing = selected.playing or "?"
+                    local maxP = selected.maxPlayers or "?"
+                    print("Trying server " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
                     
                     -- Queue the script for the next server
                     queueFunc([[loadstring(game:HttpGet("https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"))()]])
@@ -152,10 +153,9 @@ local function doHop()
                     end)
                     
                     if tpOk then
-                        print("Teleport initiated - waiting for hop...")
+                        print("Teleport initiated successfully!")
                         hopped = true
-                        -- Add a delay to prevent immediate loop if teleport is slow
-                        task.wait(10)
+                        task.wait(10)  -- Give time for teleport to start
                         break
                     else
                         warn("Teleport failed (" .. tostring(err) .. ") - trying next server...")
