@@ -98,7 +98,7 @@ local function moveToTarget()
     end
 end
 
--- === MAIN HOP FUNCTION (the core logic) ===
+-- === MAIN HOP FUNCTION ===
 local function doHop()
     local teleportData = TPService:GetLocalPlayerTeleportData()
     local currentHop = (teleportData and teleportData.hopCount) or 0
@@ -115,9 +115,9 @@ local function doHop()
     print("Fetching servers...")
 
     local cursor = ""
-    local found = false
+    local hopped = false
 
-    while not found do
+    while not hopped do
         local url = string.format(
             "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100%s",
             PlaceId,
@@ -144,36 +144,38 @@ local function doHop()
                 for _, selected in ipairs(servers) do
                     print("Trying server " .. selected.id .. " (" .. selected.playing .. "/" .. selected.maxPlayers .. ")")
                     
-                    -- === SELF-QUEUE MAGIC: No string duplication! ===
-                    queueFunc(loadstring(game:HttpGet("https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"))())
+                    -- Queue the script for the next server
+                    queueFunc([[loadstring(game:HttpGet("https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"))()]])
                     
                     local tpOk, err = pcall(function()
                         TPService:TeleportToPlaceInstance(PlaceId, selected.id, Players.LocalPlayer, {hopCount = currentHop + 1})
                     end)
                     
                     if tpOk then
-                        print("Hop successful!")
-                        found = true
+                        print("Teleport initiated - waiting for hop...")
+                        hopped = true
+                        -- Add a delay to prevent immediate loop if teleport is slow
+                        task.wait(10)
                         break
                     else
-                        warn("Failed (" .. tostring(err) .. ") - trying next...")
+                        warn("Teleport failed (" .. tostring(err) .. ") - trying next server...")
                         task.wait(1)
                     end
                 end
             end
             
-            if body.nextPageCursor and not found then
+            if body.nextPageCursor and not hopped then
                 cursor = body.nextPageCursor
-                print("Next page...")
+                print("No success yet - moving to next page...")
             else
-                if not found then
-                    warn("No suitable servers after all pages. Retrying in 10s...")
+                if not hopped then
+                    warn("No suitable servers worked after all pages. Retrying full search in 10s...")
                     task.wait(10)
                     cursor = ""
                 end
             end
         else
-            warn("API failed, retrying in 5s...")
+            warn("API request failed, retrying in 5s...")
             task.wait(5)
             cursor = ""
         end
