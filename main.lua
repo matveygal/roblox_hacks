@@ -6,7 +6,6 @@ local httprequest = (syn and syn.request) or http and http.request or http_reque
 
 local PlaceId = 8737602449
 local TargetCords = Vector3.new(267, 3, 303)
-local MaxHops = 5
 local MinPlayers = 13
 local MaxPlayersAllowed = 24
 
@@ -98,89 +97,83 @@ local function moveToTarget()
     end
 end
 
--- === MAIN HOP FUNCTION ===
-local function doHop()
-    local teleportData = TPService:GetLocalPlayerTeleportData()
-    local currentHop = (teleportData and teleportData.hopCount) or 0
+-- === INFINITE HOP LOOP ===
+local function infiniteHop()
+    while true do
+        print("[HOP] Moving to coordinates...")
 
-    if currentHop >= MaxHops then
-        print("DONE! Completed " .. MaxHops .. " hops.")
-        return
-    end
+        moveToTarget()
 
-    print("Hop " .. (currentHop + 1) .. "/" .. MaxHops .. ": Moving to coordinates...")
+        print("[HOP] Fetching servers...")
 
-    moveToTarget()
+        local cursor = ""
+        local hopped = false
 
-    print("Fetching servers...")
-
-    local cursor = ""
-    local hopped = false
-
-    while not hopped do
-        local url = string.format(
-            "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100%s",
-            PlaceId,
-            cursor ~= "" and "&cursor=" .. cursor or ""
-        )
-        
-        local req = httprequest({Url = url})
-        local success, body = pcall(function() return HttpService:JSONDecode(req.Body) end)
-        
-        if success and body and body.data then
-            local servers = {}
-            for _, server in pairs(body.data) do
-                if server.id ~= game.JobId and server.playing >= MinPlayers and server.playing <= MaxPlayersAllowed then
-                    -- REMOVED: and server.playing < server.maxPlayers
-                    -- Some servers may not return maxPlayers reliably, causing nil errors
-                    table.insert(servers, server)
-                end
-            end
+        while not hopped do
+            local url = string.format(
+                "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100%s",
+                PlaceId,
+                cursor ~= "" and "&cursor=" .. cursor or ""
+            )
             
-            if #servers > 0 then
-                table.sort(servers, function(a,b) return (a.playing or 0) > (b.playing or 0) end)  -- Safe sort
-                
-                for _, selected in ipairs(servers) do
-                    local playing = selected.playing or "?"
-                    local maxP = selected.maxPlayers or "?"
-                    print("Trying server " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
-                    
-                    -- Queue the script for the next server
-                    queueFunc([[loadstring(game:HttpGet("https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"))()]])
-                    
-                    local tpOk, err = pcall(function()
-                        TPService:TeleportToPlaceInstance(PlaceId, selected.id, Players.LocalPlayer, {hopCount = currentHop + 1})
-                    end)
-                    
-                    if tpOk then
-                        print("Teleport initiated successfully!")
-                        hopped = true
-                        task.wait(10)  -- Give time for teleport to start
-                        break
-                    else
-                        warn("Teleport failed (" .. tostring(err) .. ") - trying next server...")
-                        task.wait(1)
+            local req = httprequest({Url = url})
+            local success, body = pcall(function() return HttpService:JSONDecode(req.Body) end)
+            
+            if success and body and body.data then
+                local servers = {}
+                for _, server in pairs(body.data) do
+                    if server.id ~= game.JobId 
+                        and server.playing >= MinPlayers 
+                        and server.playing <= MaxPlayersAllowed then
+                        table.insert(servers, server)
                     end
                 end
-            end
-            
-            if body.nextPageCursor and not hopped then
-                cursor = body.nextPageCursor
-                print("No success yet - moving to next page...")
-            else
-                if not hopped then
-                    warn("No suitable servers worked after all pages. Retrying full search in 10s...")
-                    task.wait(10)
-                    cursor = ""
+                
+                if #servers > 0 then
+                    table.sort(servers, function(a,b) return (a.playing or 0) > (b.playing or 0) end)
+                    
+                    for _, selected in ipairs(servers) do
+                        local playing = selected.playing or "?"
+                        local maxP = selected.maxPlayers or "?"
+                        print("[HOP] Trying server " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
+                        
+                        -- Queue itself for the next server
+                        queueFunc('loadstring(game:HttpGet("https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"))()')
+                        
+                        local tpOk, err = pcall(function()
+                            TPService:TeleportToPlaceInstance(PlaceId, selected.id, Players.LocalPlayer)
+                        end)
+                        
+                        if tpOk then
+                            print("[HOP] Teleport initiated successfully!")
+                            hopped = true
+                            task.wait(10)  -- Give Roblox time to process the teleport
+                            break
+                        else
+                            warn("[HOP] Teleport failed (" .. tostring(err) .. ") - trying next...")
+                            task.wait(1)
+                        end
+                    end
                 end
+                
+                if body.nextPageCursor and not hopped then
+                    cursor = body.nextPageCursor
+                    print("[HOP] Moving to next page...")
+                else
+                    if not hopped then
+                        warn("[HOP] No suitable servers found after all pages. Retrying in 10s...")
+                        task.wait(10)
+                        cursor = ""
+                    end
+                end
+            else
+                warn("[HOP] API request failed, retrying in 5s...")
+                task.wait(5)
+                cursor = ""
             end
-        else
-            warn("API request failed, retrying in 5s...")
-            task.wait(5)
-            cursor = ""
         end
     end
 end
 
--- === START ===
-doHop()
+-- === START INFINITE LOOP ===
+infiniteHop()
