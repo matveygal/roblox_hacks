@@ -91,9 +91,7 @@ local function findUnclaimedBooths(boothLocation)
     local boothUI = boothLocation:WaitForChild("BoothUI", 5)
     local interactions = workspace:WaitForChild("BoothInteractions", 5)
     if not boothUI or not interactions then return unclaimed end
-    
     local mainPos2D = Vector3.new(BOOTH_CHECK_POSITION.X, 0, BOOTH_CHECK_POSITION.Z)
-    
     for _, uiFrame in ipairs(boothUI:GetChildren()) do
         if uiFrame:FindFirstChild("Details") and uiFrame.Details:FindFirstChild("Owner") then
             if uiFrame.Details.Owner.Text == "unclaimed" then
@@ -138,42 +136,42 @@ local function holdE(duration)
 end
 
 local function verifyClaim(boothLocation, boothNum)
-    local boothUI = boothLocation.BoothUI:FindFirstChild("BoothUI" .. boothNum)
-    if boothUI and boothUI.Details and boothUI.Details.Owner then
-        local ownerText = boothUI.Details.Owner.Text
-        return string.find(ownerText, player.DisplayName) ~= nil 
-            or string.find(ownerText, player.Name) ~= nil
-    end
-    return false
+    local boothUI = boothLocation:FindFirstChild("BoothUI")
+    if not boothUI then return false end
+    local boothFrame = boothUI:FindFirstChild("BoothUI" .. boothNum)
+    if not boothFrame then return false end
+    local details = boothFrame:FindFirstChild("Details")
+    if not details then return false end
+    local owner = details:FindFirstChild("Owner")
+    if not owner then return false end
+    local ownerText = owner.Text
+    print("[DEBUG] Owner text for booth #"..boothNum..": ", ownerText)
+    return string.find(ownerText, player.DisplayName) ~= nil or string.find(ownerText, player.Name) ~= nil
 end
 
 local function claimBooth()
     print("=== BOOTH CLAIMER ===")
-    
     local boothLocation = getBoothLocation()
     if not boothLocation then
         print("[BOOTH] ERROR: Could not find booth UI!")
         return nil
     end
-    
     local unclaimed = findUnclaimedBooths(boothLocation)
     print("[BOOTH] Found " .. #unclaimed .. " unclaimed booth(s)")
-    
     if #unclaimed == 0 then
         print("[BOOTH] ERROR: No booths available!")
         return nil
     end
-    
     for i, booth in ipairs(unclaimed) do
         if i > MAX_CLAIM_ATTEMPTS then break end
-        
         print("[BOOTH] Trying Booth #" .. booth.number .. "...")
         teleportTo(booth.cframe)
         task.wait(0.3)
         holdE(HOLD_E_DURATION)
-        task.wait(0.5)
-        
-        if verifyClaim(boothLocation, booth.number) then
+        task.wait(1)
+        local success = verifyClaim(boothLocation, booth.number)
+        print("[DEBUG] verifyClaim result for booth #"..booth.number..": ", success)
+        if success then
             print("[BOOTH] SUCCESS! Claimed Booth #" .. booth.number)
             print("[BOOTH] Position: " .. tostring(booth.position))
             return booth.position
@@ -181,7 +179,6 @@ local function claimBooth()
             print("[BOOTH] Failed, trying next...")
         end
     end
-    
     print("[BOOTH] ERROR: Could not claim any booth!")
     return nil
 end
