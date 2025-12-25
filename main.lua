@@ -10,13 +10,24 @@ pcall(function()
     VirtualInputManager = game:GetService("VirtualInputManager")
 end)
 
+print("VirtualInputManager available: " .. tostring(VirtualInputManager ~= nil))
+print("keypress available: " .. tostring(keypress ~= nil))
+print("keyrelease available: " .. tostring(keyrelease ~= nil))
+
 -- Helper to send key events (tries multiple methods)
 local function sendKeyEvent(press, keyCode)
+    print("sendKeyEvent called: press=" .. tostring(press) .. ", keyCode=" .. tostring(keyCode))
+    
     -- Method 1: VirtualInputManager
     if VirtualInputManager then
-        pcall(function()
+        local success, err = pcall(function()
             VirtualInputManager:SendKeyEvent(press, keyCode, false, game)
         end)
+        if success then
+            print("  Used VirtualInputManager")
+        else
+            print("  VirtualInputManager failed: " .. tostring(err))
+        end
         return
     end
     
@@ -30,8 +41,12 @@ local function sendKeyEvent(press, keyCode)
     if vkCode then
         if press and keypress then
             keypress(vkCode)
+            print("  Used keypress")
         elseif not press and keyrelease then
             keyrelease(vkCode)
+            print("  Used keyrelease")
+        else
+            print("  No input method available!")
         end
     end
 end
