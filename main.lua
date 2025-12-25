@@ -23,7 +23,7 @@ local SCRIPT_URL = "https://raw.githubusercontent.com/matveygal/roblox_hacks/mai
 
 local BOOTH_CHECK_POSITION = Vector3.new(165, 0, 311)  -- Center point to search for booths
 local MAX_BOOTH_DISTANCE = 92                          -- Max studs from check position
-local HOLD_E_DURATION = 2                              -- Seconds to hold E
+local HOLD_E_DURATION = 3                              -- Seconds to hold E
 local MAX_CLAIM_ATTEMPTS = 5                           -- Max booths to try
 
 local MESSAGES = {
