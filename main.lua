@@ -31,7 +31,7 @@ local MESSAGES = {
     "Yo! Robux please?", "What's up? Any robux for me?", "Love your vibe and your robux. Can I have some?", "GG! DONATE!", "You're awesome! Any money for me?"
 }
 
-local WAIT_FOR_ANSWER_TIME = 15        -- seconds to wait for reply
+local WAIT_FOR_ANSWER_TIME = 7        -- seconds to wait for reply
 local YES_LIST = {"yes", "yeah", "yep", "sure", "ok", "okay", "y", "follow", "come", "lets go", "go"}
 local NO_LIST = {"no", "nope", "nah", "don't", "dont", "n", "stop", "leave", "no thanks"}
 
