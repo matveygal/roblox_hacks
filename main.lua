@@ -5,6 +5,14 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
+-- Wait for character to fully load (required for Remotes module)
+if not LocalPlayer.Character then
+    print("Waiting for character to load...")
+    LocalPlayer.CharacterAdded:Wait()
+end
+LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+print("Character loaded!")
+
 -- ============ CONFIGURATION ============
 local MAIN_CHECK_POSITION = Vector3.new(165, 0, 311)  -- Center point to search around
 local MAX_BOOTH_DISTANCE = 92                          -- Max studs from check position
@@ -18,17 +26,22 @@ local function loadRemotes()
     print("Loading remotes module...")
     for _, v in ipairs(ReplicatedStorage:GetChildren()) do
         if v.Name:find('Remote') and v:IsA('ModuleScript') then
+            -- Test the module works before using it (same as original hack)
             local success = pcall(function()
-                Remotes = require(v)
+                local testRemotes = require(v)
+                testRemotes.Event('PromotionBlimpGiftbux'):FireServer()
             end)
-            if success and Remotes then
-                print("Found remotes module: " .. v.Name)
+            if success then
+                Remotes = require(v)
+                print("Found working remotes module: " .. v.Name)
                 return true
+            else
+                print("Module " .. v.Name .. " found but not working, trying next...")
             end
         end
         task.wait()
     end
-    print("ERROR: Could not find remotes module!")
+    print("ERROR: Could not find working remotes module!")
     return false
 end
 
