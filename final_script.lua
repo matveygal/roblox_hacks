@@ -1,4 +1,4 @@
--- SOCIAL GREETER BOT – CHAT RESPONSE EDITION (2025)
+﻿-- SOCIAL GREETER BOT – CHAT RESPONSE EDITION (2025)
 -- Greets → Dances → Waits for answer → Reacts intelligently
 -- NOW WITH AUTO BOOTH CLAIMING!
 
