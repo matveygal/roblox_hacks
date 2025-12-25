@@ -567,6 +567,8 @@ if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart
     task.wait(2)
 end
 
+local ignoreList = {}
+
 -- Main loop: greet everyone, then hop
 while nextPlayer() do end
 
