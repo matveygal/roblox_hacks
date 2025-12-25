@@ -2,8 +2,39 @@
 -- Uses physical interaction (hold E) to claim booths
 
 local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
+
+-- Get VirtualInputManager safely (may not be available in all executors)
+local VirtualInputManager = nil
+pcall(function()
+    VirtualInputManager = game:GetService("VirtualInputManager")
+end)
+
+-- Helper to send key events (tries multiple methods)
+local function sendKeyEvent(press, keyCode)
+    -- Method 1: VirtualInputManager
+    if VirtualInputManager then
+        pcall(function()
+            VirtualInputManager:SendKeyEvent(press, keyCode, false, game)
+        end)
+        return
+    end
+    
+    -- Method 2: keypress/keyrelease (executor globals)
+    local keyMap = {
+        [Enum.KeyCode.E] = 0x45,
+        [Enum.KeyCode.Space] = 0x20,
+        [Enum.KeyCode.LeftShift] = 0xA0,
+    }
+    local vkCode = keyMap[keyCode]
+    if vkCode then
+        if press and keypress then
+            keypress(vkCode)
+        elseif not press and keyrelease then
+            keyrelease(vkCode)
+        end
+    end
+end
 
 -- Wait for character to fully load
 if not LocalPlayer.Character then
@@ -112,13 +143,13 @@ end
 -- Sprint control
 local function startSprinting()
     if isSprinting then return end
-    VirtualInputManager:SendKeyEvent(true, SPRINT_KEY, false, game)
+    sendKeyEvent(true, SPRINT_KEY)
     isSprinting = true
 end
 
 local function stopSprinting()
     if not isSprinting then return end
-    VirtualInputManager:SendKeyEvent(false, SPRINT_KEY, false, game)
+    sendKeyEvent(false, SPRINT_KEY)
     isSprinting = false
 end
 
@@ -151,9 +182,9 @@ local function performMove(getPos, sprint)
             if jumpTries < MAX_JUMP_TRIES then
                 jumpTries = jumpTries + 1
                 print("[ANTI-STUCK] Jump unstick #" .. jumpTries)
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+                sendKeyEvent(true, Enum.KeyCode.Space)
                 task.wait(JUMP_DURATION)
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+                sendKeyEvent(false, Enum.KeyCode.Space)
                 task.wait(0.5)
             else
                 randTries = randTries + 1
@@ -194,33 +225,15 @@ end
 local function holdEKey()
     print("Holding E to claim...")
     
-    -- Method 1: VirtualInputManager (if available)
-    local vim = nil
+    -- Press E
+    sendKeyEvent(true, Enum.KeyCode.E)
+    task.wait(HOLD_E_DURATION)
+    -- Release E
+    sendKeyEvent(false, Enum.KeyCode.E)
+    print("Released E")
+    
+    -- Also try proximity prompt as backup
     pcall(function()
-        vim = game:GetService("VirtualInputManager")
-    end)
-    
-    if vim then
-        -- Press E
-        vim:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-        task.wait(HOLD_E_DURATION)
-        -- Release E
-        vim:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-        print("Released E (VirtualInputManager)")
-        return true
-    end
-    
-    -- Method 2: keypress/keyrelease (executor functions)
-    if keypress and keyrelease then
-        keypress(0x45)  -- E key
-        task.wait(HOLD_E_DURATION)
-        keyrelease(0x45)
-        print("Released E (keypress/keyrelease)")
-        return true
-    end
-    
-    -- Method 3: Direct proximity prompt firing
-    local success = pcall(function()
         for _, interact in ipairs(workspace.BoothInteractions:GetChildren()) do
             local prompt = interact:FindFirstChildOfClass("ProximityPrompt")
             if prompt then
@@ -240,13 +253,7 @@ local function holdEKey()
         end
     end)
     
-    if success then
-        return true
-    end
-    
-    print("WARNING: Could not simulate E key - try holding E manually!")
-    task.wait(HOLD_E_DURATION)
-    return false
+    return true
 end
 
 -- ============ MAIN FUNCTION ============
