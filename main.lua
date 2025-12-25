@@ -60,6 +60,7 @@ local VirtualInputManager   = game:GetService("VirtualInputManager")
 local TeleportService       = game:GetService("TeleportService")
 local HttpService           = game:GetService("HttpService")
 local player                = Players.LocalPlayer
+local ignoreList = {}
 
 local httprequest = (syn and syn.request) or http and http.request or http_request or (fluxus and fluxus.request) or request
 local queueFunc = queueonteleport or queue_on_teleport or (syn and syn.queue_on_teleport) or function() warn("[HOP] Queue not supported!") end
@@ -563,8 +564,6 @@ if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart
     player.CharacterAdded:Wait()
     task.wait(2)
 end
-
-local ignoreList = {}
 
 -- Main loop: greet everyone, then hop
 while nextPlayer() do end
