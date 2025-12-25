@@ -2,6 +2,7 @@
 -- Clean standalone function for educational/private server use
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
 -- ============ CONFIGURATION ============
@@ -10,6 +11,26 @@ local MAX_BOOTH_DISTANCE = 92                          -- Max studs from check p
 local CLAIM_VERIFY_DELAY = 1                           -- Seconds to wait for claim verification
 local MAX_CLAIM_ATTEMPTS = 5                           -- Max booths to try before giving up
 -- ========================================
+
+-- Load the game's Remotes module (required for claiming)
+local Remotes = nil
+local function loadRemotes()
+    print("Loading remotes module...")
+    for _, v in ipairs(ReplicatedStorage:GetChildren()) do
+        if v.Name:find('Remote') and v:IsA('ModuleScript') then
+            local success = pcall(function()
+                Remotes = require(v)
+            end)
+            if success and Remotes then
+                print("Found remotes module: " .. v.Name)
+                return true
+            end
+        end
+        task.wait()
+    end
+    print("ERROR: Could not find remotes module!")
+    return false
+end
 
 -- Get booth UI location (handles both map layouts)
 local function getBoothLocation()
@@ -28,22 +49,6 @@ local function getBoothLocation()
     end
     
     return boothLocation
-end
-
--- Get remotes folder
-local function getRemotes()
-    return LocalPlayer:WaitForChild("PlayerScripts")
-        :WaitForChild("PlayerModule")
-        :WaitForChild("Remotes")
-end
-
--- Fire a remote event by name
-local function fireRemote(remotes, eventName)
-    local remote = remotes:FindFirstChild(eventName)
-    if remote then
-        return remote
-    end
-    return nil
 end
 
 -- Find all unclaimed booths near the check position
@@ -133,11 +138,11 @@ local function find_claim_booth()
     end
     print("------------------------")
     
-    -- Get remotes for claiming
-    local remotes = nil
-    pcall(function()
-        remotes = getRemotes()
-    end)
+    -- Load remotes module (required for claiming)
+    if not loadRemotes() then
+        print("ERROR: Failed to load remotes - cannot claim booth!")
+        return nil
+    end
     
     -- Try to claim a booth
     local claimedBooth = nil
@@ -151,15 +156,14 @@ local function find_claim_booth()
         
         print("Attempting to claim Booth #" .. booth.number .. "...")
         
-        -- Fire the claim remote
-        local success = pcall(function()
-            if remotes then
-                local claimRemote = remotes:FindFirstChild("ClaimBooth")
-                if claimRemote then
-                    claimRemote:InvokeServer(booth.number)
-                end
-            end
+        -- Fire the claim remote using the game's Remotes module
+        local success, err = pcall(function()
+            Remotes.Event("ClaimBooth"):InvokeServer(booth.number)
         end)
+        
+        if not success then
+            print("Remote call failed: " .. tostring(err))
+        end
         
         -- Wait and verify
         task.wait(CLAIM_VERIFY_DELAY)
