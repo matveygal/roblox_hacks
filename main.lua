@@ -1,13 +1,19 @@
--- SOCIAL GREETER BOT – CHAT RESPONSE EDITION (2025)
+-- SOCIAL GREETER BOT – ULTIMATE EDITION (2025)
 -- Greets → Dances → Waits for answer → Reacts intelligently
--- NOW WITH AUTO BOOTH CLAIMING!
+-- NOW WITH AUTO BOOTH CLAIMING + SERVER HOPPING!
 
 local Players               = game:GetService("Players")
 local PathfindingService    = game:GetService("PathfindingService")
 local TextChatService       = game:GetService("TextChatService")
 local ReplicatedStorage     = game:GetService("ReplicatedStorage")
 local VirtualInputManager   = game:GetService("VirtualInputManager")
+local TeleportService       = game:GetService("TeleportService")
+local HttpService           = game:GetService("HttpService")
 local player                = Players.LocalPlayer
+
+-- HTTP request function (works across executors)
+local httprequest = (syn and syn.request) or http and http.request or http_request or (fluxus and fluxus.request) or request
+local queueFunc = queueonteleport or queue_on_teleport or (syn and syn.queue_on_teleport) or function() warn("[HOP] Queue not supported!") end
 
 -- Wait for character to fully load
 if not player.Character then
@@ -16,6 +22,12 @@ if not player.Character then
 end
 player.Character:WaitForChild("HumanoidRootPart")
 print("Character loaded!")
+
+-- ==================== SERVER HOP SETTINGS ====================
+local PLACE_ID = 8737602449                            -- Please Donate place ID
+local MIN_PLAYERS = 13                                 -- Minimum players in server
+local MAX_PLAYERS_ALLOWED = 24                         -- Maximum players in server
+local SCRIPT_URL = "https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"
 
 -- ==================== BOOTH CLAIMER ====================
 local BOOTH_CHECK_POSITION = Vector3.new(165, 0, 311)  -- Center point to search for booths
@@ -447,12 +459,112 @@ local function nextPlayer()
     return true
 end
 
+-- ==================== SERVER HOP FUNCTION ====================
+local function serverHop()
+    print("[HOP] Starting server hop...")
+    
+    -- First return home before hopping
+    returnHome()
+    task.wait(1)
+    
+    local cursor = ""
+    local hopped = false
+    
+    while not hopped do
+        local url = string.format(
+            "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100%s",
+            PLACE_ID,
+            cursor ~= "" and "&cursor=" .. cursor or ""
+        )
+        
+        local success, response = pcall(function()
+            return httprequest({Url = url})
+        end)
+        
+        if not success or not response then
+            warn("[HOP] HTTP request failed, retrying in 5s...")
+            task.wait(5)
+            cursor = ""
+            continue
+        end
+        
+        local bodySuccess, body = pcall(function() 
+            return HttpService:JSONDecode(response.Body) 
+        end)
+        
+        if bodySuccess and body and body.data then
+            local servers = {}
+            for _, server in pairs(body.data) do
+                if server.id ~= game.JobId 
+                    and server.playing >= MIN_PLAYERS 
+                    and server.playing <= MAX_PLAYERS_ALLOWED then
+                    table.insert(servers, server)
+                end
+            end
+            
+            -- Sort by most players (more players = more donations potential)
+            table.sort(servers, function(a, b) return (a.playing or 0) > (b.playing or 0) end)
+            
+            if #servers > 0 then
+                print("[HOP] Found " .. #servers .. " suitable servers")
+                
+                for _, selected in ipairs(servers) do
+                    local playing = selected.playing or "?"
+                    local maxP = selected.maxPlayers or "?"
+                    print("[HOP] Trying server " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
+                    
+                    -- Queue the script for next server
+                    queueFunc('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
+                    
+                    local tpOk, err = pcall(function()
+                        TeleportService:TeleportToPlaceInstance(PLACE_ID, selected.id, player)
+                    end)
+                    
+                    if tpOk then
+                        print("[HOP] Teleport initiated! See you on the other side...")
+                        hopped = true
+                        task.wait(15)  -- Wait for teleport to process
+                        break
+                    else
+                        warn("[HOP] Teleport failed: " .. tostring(err) .. " - trying next...")
+                        task.wait(1)
+                    end
+                end
+            else
+                print("[HOP] No suitable servers on this page")
+            end
+            
+            if body.nextPageCursor and not hopped then
+                cursor = body.nextPageCursor
+                print("[HOP] Checking next page...")
+            else
+                if not hopped then
+                    warn("[HOP] No suitable servers found. Retrying in 10s...")
+                    task.wait(10)
+                    cursor = ""
+                end
+            end
+        else
+            warn("[HOP] Failed to parse response, retrying in 5s...")
+            task.wait(5)
+            cursor = ""
+        end
+    end
+end
+
 -- ========= START =========
-print("=== SOCIAL GREETER BOT – CHAT RESPONSE EDITION ===")
+print("=== SOCIAL GREETER BOT – ULTIMATE EDITION ===")
+print("=== AUTO BOOTH CLAIM + SERVER HOP ===")
 if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
     player.CharacterAdded:Wait()
     task.wait(2)
 end
 
+-- Main loop: greet everyone, then hop
 while nextPlayer() do end
-print("=== BOT FINISHED – MISSION COMPLETE ===")
+
+print("[MAIN] Everyone greeted on this server!")
+print("[MAIN] Initiating server hop...")
+serverHop()
+
+print("=== BOT FINISHED ===")
