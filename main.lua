@@ -136,7 +136,7 @@ local function holdE(duration)
 end
 
 local function verifyClaim(boothLocation, boothNum)
-    local boothUI = boothLocation:FindFirstChild("BoothUI")
+    local boothUI = boothLocation.BoothUI or boothLocation:FindFirstChild("BoothUI")
     if not boothUI then return false end
     local boothFrame = boothUI:FindFirstChild("BoothUI" .. boothNum)
     if not boothFrame then return false end
