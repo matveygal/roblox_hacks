@@ -384,8 +384,13 @@ local function findClosest()
     local root = player.Character:FindFirstChild("HumanoidRootPart")
     if not root then return nil end
     local best, bestT = nil, math.huge
-    for _, p in Players:GetPlayers() do
-        if p ~= player and not ignoreList[p.UserId] and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+    local allPlayers = Players:GetPlayers()
+    if not allPlayers then
+        warn("[DEBUG] Players:GetPlayers() returned nil!")
+        return nil
+    end
+    for _, p in ipairs(allPlayers) do
+        if p and p ~= player and p.UserId and not ignoreList[p.UserId] and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
             local path = PathfindingService:CreatePath()
             path:ComputeAsync(root.Position, p.Character.HumanoidRootPart.Position)
             if path.Status == Enum.PathStatus.Success then
@@ -395,6 +400,10 @@ local function findClosest()
                 local t = dist / 16
                 if t < bestT then bestT, best = t, p end
             end
+        elseif not p then
+            warn("[DEBUG] Nil player object in Players:GetPlayers()!")
+        elseif not p.UserId then
+            warn("[DEBUG] Player without UserId: ", p)
         end
     end
     return best
