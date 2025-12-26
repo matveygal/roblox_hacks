@@ -257,7 +257,7 @@ player.Chatted:Connect(function(msg)
     print(player.Name .. ": " .. msg)
 end)
 
--- ========= MOVEMENT & DANCE (unchanged, proven) =========
+-- ========= MOVEMENT & DANCE =========
 local DIRECTION_KEYS = {
     {Enum.KeyCode.W}, {Enum.KeyCode.W, Enum.KeyCode.D}, {Enum.KeyCode.D},
     {Enum.KeyCode.D, Enum.KeyCode.S}, {Enum.KeyCode.S}, {Enum.KeyCode.S, Enum.KeyCode.A},
@@ -282,17 +282,20 @@ local function startCircleDance(duration)
 end
 
 local isSprinting = false
+
 local function startSprinting()
     if isSprinting then return end
     VirtualInputManager:SendKeyEvent(true, SPRINT_KEY, false, game)
     isSprinting = true
 end
+
 local function stopSprinting()
     if not isSprinting then return end
     VirtualInputManager:SendKeyEvent(false, SPRINT_KEY, false, game)
     isSprinting = false
 end
 
+-- FIXED performMove & chasePlayer to handle target disappearing mid-chase
 local function performMove(humanoid, root, getPos, sprint)
     if sprint then startSprinting() end
     local lastPos = root.Position
@@ -303,6 +306,11 @@ local function performMove(humanoid, root, getPos, sprint)
     while true do
         task.wait(0.1)
         local pos = getPos()
+        if not pos then  -- Target lost mid-move
+            print("[MOVE] Target lost mid-chase! Stopping movement.")
+            if sprint then stopSprinting() end
+            return false
+        end
         if (root.Position - pos).Magnitude <= TARGET_DISTANCE then
             if sprint then stopSprinting() end
             return true
@@ -310,7 +318,12 @@ local function performMove(humanoid, root, getPos, sprint)
 
         humanoid:MoveTo(pos)
         local moved = (root.Position - lastPos).Magnitude
-        if moved < STUCK_THRESHOLD then stuckTime += 0.1 else stuckTime = 0; lastPos = root.Position end
+        if moved < STUCK_THRESHOLD then 
+            stuckTime += 0.1 
+        else 
+            stuckTime = 0
+            lastPos = root.Position 
+        end
 
         if stuckTime >= STUCK_CHECK_TIME then
             if jumpTries < MAX_JUMP_TRIES then
@@ -345,7 +358,16 @@ local function chasePlayer(t)
     local r = player.Character:FindFirstChild("HumanoidRootPart")
     if not h or not r then return false end
     print("[CHASE] Going to " .. t.Name)
-    return performMove(h, r, function() return t.Character.HumanoidRootPart.Position end, true)
+    
+    local function safeGetPos()
+        local targetHRP = t.Character and t.Character:FindFirstChild("HumanoidRootPart")
+        if not targetHRP then
+            return nil
+        end
+        return targetHRP.Position
+    end
+    
+    return performMove(h, r, safeGetPos, true)
 end
 
 local function returnHome()
@@ -358,9 +380,9 @@ local function returnHome()
 end
 
 local function faceTargetBriefly(t)
-    if not player.Character then return end
+    if not player.Character or not t.Character or not t.Character:FindFirstChild("HumanoidRootPart") then return end
     local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp or not t.Character then return end
+    if not hrp then return end
     local p = t.Character.HumanoidRootPart.Position
     local look = Vector3.new(p.X, hrp.Position.Y, p.Z)
     hrp.CFrame = CFrame.new(hrp.Position, look)
@@ -400,10 +422,6 @@ local function findClosest()
                 local t = dist / 16
                 if t < bestT then bestT, best = t, p end
             end
-        elseif not p then
-            warn("[DEBUG] Nil player object in Players:GetPlayers()!")
-        elseif not p.UserId then
-            warn("[DEBUG] Player without UserId: ", p)
         end
     end
     return best
