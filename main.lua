@@ -1,20 +1,3 @@
--- SOCIAL GREETER BOT – ULTIMATE EDITION (2025)
--- Greets → Dances → Waits for answer → Reacts intelligently
--- NOW WITH AUTO BOOTH CLAIMING + SERVER HOPPING!
-
--- ==================== SCRIPT STRUCTURE & FUNCTIONALITY INDEX ====================
---  1-60:   Constants, services, config, HTTP setup
--- 61-120:  Booth claiming logic (getBoothLocation, findUnclaimedBooths, teleportTo, holdE, verifyClaim, claimBooth)
--- 121-140: Claim booth and set HOME_POSITION
--- 141-180: Social bot message/response constants
--- 181-220: Movement/dance constants
--- 221-260: Chat logger, response detection
--- 261-340: Movement/dance functions (startCircleDance, sprint, anti-stuck, performMove, chasePlayer, returnHome, faceTargetBriefly)
--- 341-400: Chat sending, player finding
--- 401-480: Main logic (nextPlayer)
--- 481-540: Server hop logic (serverHop)
--- 541-end: Script entrypoint, main loop
---
 -- ==================== CONSTANTS & CONFIGURATION ====================
 local PLACE_ID = 8737602449                            -- Please Donate place ID
 local MIN_PLAYERS = 13                                 -- Minimum players in server
