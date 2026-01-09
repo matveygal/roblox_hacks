@@ -58,6 +58,7 @@ if not player.Character then
 end
 player.Character:WaitForChild("HumanoidRootPart")
 print("Character loaded!")
+print("[UPDATE] Booth claiming now uses direct remote invocation (no key simulation)")
 
 -- ==================== BOOTH CLAIMER ====================
 local function getBoothLocation()
