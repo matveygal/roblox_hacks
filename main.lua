@@ -587,6 +587,12 @@ local function serverHop()
             end
         else
             warn("[HOP] Failed to parse response, retrying in 5s...")
+            warn("[HOP DEBUG] Parse error: " .. tostring(body))
+            warn("[HOP DEBUG] Response status: " .. tostring(response.StatusCode or "N/A"))
+            warn("[HOP DEBUG] Response body type: " .. type(response.Body))
+            warn("[HOP DEBUG] Response body length: " .. #tostring(response.Body))
+            warn("[HOP DEBUG] First 500 chars of body:")
+            warn(string.sub(tostring(response.Body), 1, 500))
             task.wait(5)
             cursor = ""
         end
