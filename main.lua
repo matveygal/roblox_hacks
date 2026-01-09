@@ -524,6 +524,22 @@ local function serverHop()
         
         if not success or not response then
             warn("[HOP] HTTP request failed, retrying in 5s...")
+            if not success then
+                warn("[HOP DEBUG] Request error: " .. tostring(response))
+            end
+            task.wait(5)
+            cursor = ""
+            continue
+        end
+        
+        -- Check if response.Body exists before parsing
+        if not response.Body then
+            warn("[HOP] Response has no Body field!")
+            warn("[HOP DEBUG] Response type: " .. type(response))
+            warn("[HOP DEBUG] Response fields:")
+            for k, v in pairs(response) do
+                warn("  " .. tostring(k) .. ": " .. type(v))
+            end
             task.wait(5)
             cursor = ""
             continue
