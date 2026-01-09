@@ -115,11 +115,29 @@ local function teleportTo(cframe)
     end
 end
 
-local function holdE(duration)
-    print("[BOOTH] Holding E for " .. duration .. " seconds...")
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-    task.wait(duration)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+local function claimBoothRemote(boothNum)
+    print("[BOOTH] Claiming booth #" .. boothNum .. " via remote...")
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if not remotes then
+        warn("[BOOTH] Remotes folder not found!")
+        return false
+    end
+    local claimRemote = remotes:FindFirstChild("ClaimBooth")
+    if not claimRemote then
+        warn("[BOOTH] ClaimBooth remote not found!")
+        return false
+    end
+    
+    local success, err = pcall(function()
+        claimRemote:InvokeServer(boothNum)
+    end)
+    
+    if not success then
+        warn("[BOOTH] Remote invocation failed: " .. tostring(err))
+        return false
+    end
+    
+    return true
 end
 
 local function verifyClaim(boothLocation, boothNum)
@@ -154,7 +172,14 @@ local function claimBooth()
         print("[BOOTH] Trying Booth #" .. booth.number .. "...")
         teleportTo(booth.cframe)
         task.wait(BOOTH_TELEPORT_DELAY)
-        holdE(HOLD_E_DURATION)
+        
+        -- Try to claim via remote instead of key simulation
+        local claimed = claimBoothRemote(booth.number)
+        if not claimed then
+            print("[BOOTH] Remote claim failed, skipping...")
+            continue
+        end
+        
         task.wait(1)
         local success = verifyClaim(boothLocation, booth.number)
         print("[DEBUG] verifyClaim result for booth #"..booth.number..": ", success)
