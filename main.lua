@@ -1,7 +1,7 @@
 -- ==================== CONSTANTS & CONFIGURATION ====================
 local PLACE_ID = 8737602449                            -- Please Donate place ID
-local MIN_PLAYERS = 13                                 -- Minimum players in server
-local MAX_PLAYERS_ALLOWED = 24                         -- Maximum players in server
+local MIN_PLAYERS = 4                                  -- Minimum players in server
+local MAX_PLAYERS_ALLOWED = 27                         -- Maximum players in server
 local SCRIPT_URL = "https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"
 
 local BOOTH_CHECK_POSITION = Vector3.new(165, 0, 311)  -- Center point to search for booths
@@ -15,6 +15,7 @@ local MESSAGES = {
 }
 
 local WAIT_FOR_ANSWER_TIME = 7        -- seconds to wait for reply
+local MAX_WAIT_DISTANCE = 20              -- max distance before following player while waiting
 local YES_LIST = {"yes", "yeah", "yep", "sure", "ok", "okay", "y", "follow", "come", "lets go", "go"}
 local NO_LIST = {"no", "nope", "nah", "don't", "dont", "n", "stop", "leave", "no thanks"}
 
@@ -369,9 +370,6 @@ local function faceTargetBriefly(t)
     local p = t.Character.HumanoidRootPart.Position
     local look = Vector3.new(p.X, hrp.Position.Y, p.Z)
     hrp.CFrame = CFrame.new(hrp.Position, look)
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.W, false, game)
-    task.wait(0.1)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.W, false, game)
 end
 
 local function sendChat(msg)
@@ -433,6 +431,34 @@ local function nextPlayer()
         print("[WAIT] Waiting " .. WAIT_FOR_ANSWER_TIME .. "s for " .. target.Name .. "'s reply...")
         local start = tick()
         while tick() - start < WAIT_FOR_ANSWER_TIME do
+            -- Check if target still exists
+            if not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then
+                print("[WAIT] Target left, moving on")
+                ignoreList[target.UserId] = true
+                break
+            end
+            
+            -- Get player and target positions
+            local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
+            
+            if root and targetRoot then
+                local distance = (root.Position - targetRoot.Position).Magnitude
+                
+                -- If target is too far, follow them
+                if distance > MAX_WAIT_DISTANCE then
+                    print("[WAIT] Target moving away, following...")
+                    local humanoid = player.Character:FindFirstChild("Humanoid")
+                    if humanoid then
+                        humanoid:MoveTo(targetRoot.Position)
+                    end
+                    -- Don't call faceTargetBriefly here - let MoveTo control movement
+                else
+                    -- Only face when NOT moving
+                    faceTargetBriefly(target)
+                end
+            end
+            
             if responseReceived and lastSpeaker == target.Name then
                 local msg = lastMessage
                 print("[RESPONSE] " .. target.Name .. " said: " .. msg)
