@@ -9,7 +9,6 @@ local BOOTH_CHECK_POSITION = Vector3.new(165, 0, 311)  -- Center point to search
 local MAX_BOOTH_DISTANCE = 92                          -- Max studs from check position
 local BOOTH_TELEPORT_DELAY = 1                         -- Delay after teleporting to booth before holding E
 local HOLD_E_DURATION = 3                              -- Seconds to hold E
-local MAX_CLAIM_ATTEMPTS = 10                          -- Max booths to try
 
 local MESSAGES = {
     "Hey there! Can you donate?", "Hi :) Donation please?", "How's it going? Any loose robux?", "Nice to meet you! GIMME MONEY!!!",
@@ -58,7 +57,7 @@ if not player.Character then
 end
 player.Character:WaitForChild("HumanoidRootPart")
 print("Character loaded!")
-print("[UPDATE] Booth claiming now uses direct remote invocation (no key simulation)")
+print("[UPDATE] Booth claiming retries infinitely until success")
 
 -- ==================== BOOTH CLAIMER ====================
 local function getBoothLocation()
@@ -169,7 +168,6 @@ local function claimBooth()
         return nil
     end
     for i, booth in ipairs(unclaimed) do
-        if i > MAX_CLAIM_ATTEMPTS then break end
         print("[BOOTH] Trying Booth #" .. booth.number .. "...")
         teleportTo(booth.cframe)
         task.wait(BOOTH_TELEPORT_DELAY)
@@ -192,8 +190,8 @@ local function claimBooth()
             print("[BOOTH] Failed, trying next...")
         end
     end
-    print("[BOOTH] ERROR: Could not claim any booth!")
-    return nil
+    print("[BOOTH] All booths tried, retrying from start...")
+    return claimBooth()  -- Recursively retry until success
 end
 
 -- CLAIM BOOTH AND SET HOME POSITION
