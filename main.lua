@@ -1,11 +1,13 @@
 -- ==================== CONSTANTS & CONFIGURATION ====================
 local PLACE_ID = 8737602449                            -- Please Donate place ID
 local MIN_PLAYERS = 4                                  -- Minimum players in server
-local MAX_PLAYERS_ALLOWED = 27                         -- Maximum players in server
+local MAX_PLAYERS_ALLOWED = 24                         -- Maximum players in server
+local TELEPORT_RETRY_DELAY = 4                         -- Delay between teleport attempts (prevents rate limiting)
 local SCRIPT_URL = "https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"
 
 local BOOTH_CHECK_POSITION = Vector3.new(165, 0, 311)  -- Center point to search for booths
 local MAX_BOOTH_DISTANCE = 92                          -- Max studs from check position
+local BOOTH_TELEPORT_DELAY = 1                         -- Delay after teleporting to booth before holding E
 local HOLD_E_DURATION = 3                              -- Seconds to hold E
 local MAX_CLAIM_ATTEMPTS = 10                          -- Max booths to try
 
@@ -151,7 +153,7 @@ local function claimBooth()
         if i > MAX_CLAIM_ATTEMPTS then break end
         print("[BOOTH] Trying Booth #" .. booth.number .. "...")
         teleportTo(booth.cframe)
-        task.wait(0.3)
+        task.wait(BOOTH_TELEPORT_DELAY)
         holdE(HOLD_E_DURATION)
         task.wait(1)
         local success = verifyClaim(boothLocation, booth.number)
@@ -587,7 +589,7 @@ local function serverHop()
                         break
                     else
                         warn("[HOP] Teleport failed: " .. tostring(err) .. " - trying next...")
-                        task.wait(1)
+                        task.wait(TELEPORT_RETRY_DELAY)
                     end
                 end
             else
