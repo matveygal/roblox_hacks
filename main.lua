@@ -15,7 +15,7 @@ local MESSAGES = {
 }
 
 local WAIT_FOR_ANSWER_TIME = 7        -- seconds to wait for reply
-local MAX_WAIT_DISTANCE = 20              -- max distance before following player while waiting
+local MAX_WAIT_DISTANCE = 10              -- max distance before following player while waiting
 local YES_LIST = {"yes", "yeah", "yep", "sure", "ok", "okay", "y", "follow", "come", "lets go", "go"}
 local NO_LIST = {"no", "nope", "nah", "don't", "dont", "n", "stop", "leave", "no thanks"}
 
