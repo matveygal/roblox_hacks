@@ -373,13 +373,16 @@ local function faceTargetBriefly(t)
 end
 
 local function sendChat(msg)
-    if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-        local ch = TextChatService.TextChannels.RBXGeneral
-        if ch then pcall(function() ch:SendAsync(msg) end) end
-    end
-    local say = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-                and ReplicatedStorage.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
-    if say then pcall(function() say:FireServer(msg, "All") end) end
+    -- Make chat non-blocking to prevent hangs from SendAsync
+    task.spawn(function()
+        if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+            local ch = TextChatService.TextChannels.RBXGeneral
+            if ch then pcall(function() ch:SendAsync(msg) end) end
+        end
+        local say = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+                    and ReplicatedStorage.DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
+        if say then pcall(function() say:FireServer(msg, "All") end) end
+    end)
 end
 
 local function findClosest()
