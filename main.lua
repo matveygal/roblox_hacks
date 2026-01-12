@@ -671,6 +671,9 @@ local function serverHop()
     local hopped = false
     
     while not hopped do
+        -- Small delay before each API request to avoid rate limiting
+        task.wait(2)
+        
         local url = string.format(
             "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100%s",
             PLACE_ID,
@@ -693,13 +696,9 @@ local function serverHop()
         
         -- Check if response.Body exists before parsing
         if not response.Body then
-            log("[HOP] Response has no Body field!")
-            log("[HOP DEBUG] Response type: " .. type(response))
-            log("[HOP DEBUG] Response fields:")
-            for k, v in pairs(response) do
-                log("  " .. tostring(k) .. ": " .. type(v))
-            end
-            task.wait(5)
+            log("[HOP] Response has no Body field! Likely rate-limited by Roblox.")
+            log("[HOP] Waiting 10 seconds before retrying...")
+            task.wait(10)  -- Longer wait to let rate limit reset
             cursor = ""
             continue
         end
