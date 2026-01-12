@@ -1,19 +1,28 @@
--- BOOTH CLAIMER DEBUG VERSION
--- Standalone for easier debugging
-
+-- Test booth claiming by trying all unclaimed booths
 local Players = game:GetService("Players")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 local player = Players.LocalPlayer
 
+-- Setup file logging
+local logLines = {}
+local function log(msg)
+    print(msg)
+    table.insert(logLines, msg)
+end
+
+local function saveLog()
+    local content = table.concat(logLines, "\n")
+    writefile("booth_debug_log.txt", content)
+    print("[FILE] Log saved to booth_debug_log.txt")
+end
+
+log("[TEST] Attempting to claim booths one by one...")
+log("")
+
+-- Constants from main.lua
 local BOOTH_CHECK_POSITION = Vector3.new(165, 0, 311)
 local MAX_BOOTH_DISTANCE = 92
-local HOLD_E_DURATION = 3
-local MAX_CLAIM_ATTEMPTS = 5
 
--- Wait for character
-if not player.Character then player.CharacterAdded:Wait() end
-player.Character:WaitForChild("HumanoidRootPart")
-
+-- Helper functions from main.lua
 local function getBoothLocation()
     local boothLocation = nil
     pcall(function()
@@ -69,15 +78,8 @@ local function teleportTo(cframe)
     end
 end
 
-local function holdE(duration)
-    print("[BOOTH] Holding E for " .. duration .. " seconds...")
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-    task.wait(duration)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-end
-
 local function verifyClaim(boothLocation, boothNum)
-    local boothUI = boothLocation:FindFirstChild("BoothUI")
+    local boothUI = boothLocation.BoothUI or boothLocation:FindFirstChild("BoothUI")
     if not boothUI then return false end
     local boothFrame = boothUI:FindFirstChild("BoothUI" .. boothNum)
     if not boothFrame then return false end
@@ -86,48 +88,125 @@ local function verifyClaim(boothLocation, boothNum)
     local owner = details:FindFirstChild("Owner")
     if not owner then return false end
     local ownerText = owner.Text
-    print("[DEBUG] Owner text for booth #"..boothNum..": ", ownerText)
+    log("[VERIFY] Owner text for booth #"..boothNum..": " .. ownerText)
     return string.find(ownerText, player.DisplayName) ~= nil or string.find(ownerText, player.Name) ~= nil
 end
 
-local function claimBooth()
-    print("=== BOOTH CLAIMER DEBUG ===")
-    local boothLocation = getBoothLocation()
-    if not boothLocation then
-        print("[BOOTH] ERROR: Could not find booth UI!")
-        return nil
-    end
-    local unclaimed = findUnclaimedBooths(boothLocation)
-    print("[BOOTH] Found " .. #unclaimed .. " unclaimed booth(s)")
-    if #unclaimed == 0 then
-        print("[BOOTH] ERROR: No booths available!")
-        return nil
-    end
-    for i, booth in ipairs(unclaimed) do
-        if i > MAX_CLAIM_ATTEMPTS then break end
-        print("[BOOTH] Trying Booth #" .. booth.number .. "...")
-        teleportTo(booth.cframe)
-        task.wait(0.3)
-        holdE(HOLD_E_DURATION)
-        task.wait(1)
-        local success = verifyClaim(boothLocation, booth.number)
-        print("[DEBUG] verifyClaim result for booth #"..booth.number..": ", success)
-        if success then
-            print("[BOOTH] SUCCESS! Claimed Booth #" .. booth.number)
-            print("[BOOTH] Position: " .. tostring(booth.position))
-            return booth.position
-        else
-            print("[BOOTH] Failed, trying next...")
-        end
-    end
-    print("[BOOTH] ERROR: Could not claim any booth!")
-    return nil
+-- Get booth location
+local boothLocation = getBoothLocation()
+if not boothLocation then
+    log("[ERROR] Could not find booth UI!")
+    saveLog()
+    return
 end
 
--- RUN DEBUG
-local pos = claimBooth()
-if pos then
-    print("[RESULT] Claimed booth at:", pos)
-else
-    print("[RESULT] Failed to claim any booth.")
+-- Find unclaimed booths
+local unclaimed = findUnclaimedBooths(boothLocation)
+log("[FOUND] " .. #unclaimed .. " unclaimed booth(s)")
+
+if #unclaimed == 0 then
+    log("[ERROR] No unclaimed booths available!")
+    saveLog()
+    return
 end
+
+-- Get BoothInteractions reference
+local boothInteractions = workspace:FindFirstChild("BoothInteractions")
+if not boothInteractions then
+    log("[ERROR] BoothInteractions not found in Workspace!")
+    saveLog()
+    return
+end
+
+log("[READY] Starting booth claiming attempts...")
+log("")
+
+-- Try each booth one by one
+for i, booth in ipairs(unclaimed) do
+    log("═══════════════════════════════════════════════")
+    log("[ATTEMPT " .. i .. "/" .. #unclaimed .. "] Trying Booth #" .. booth.number)
+    log("[INFO] Distance: " .. math.floor(booth.distance) .. " studs")
+    
+    -- Find the ProximityPrompt for THIS specific booth
+    local myBoothInteraction = nil
+    for _, interact in ipairs(boothInteractions:GetChildren()) do
+        if interact:GetAttribute("BoothSlot") == booth.number then
+            myBoothInteraction = interact
+            log("[FOUND] This booth's interaction object: " .. interact.Name)
+            break
+        end
+    end
+    
+    if not myBoothInteraction then
+        log("[ERROR] Couldn't find interaction object for booth #" .. booth.number)
+        continue
+    end
+    
+    -- Find ProximityPrompt in this booth's interaction
+    local claimPrompt = nil
+    for _, child in ipairs(myBoothInteraction:GetChildren()) do
+        if child:IsA("ProximityPrompt") and child.Name == "Claim" then
+            claimPrompt = child
+            log("[FOUND] ProximityPrompt: " .. child.Name .. " | MaxDistance: " .. tostring(child.MaxActivationDistance))
+            break
+        end
+    end
+    
+    if not claimPrompt then
+        log("[ERROR] No ProximityPrompt found for booth #" .. booth.number)
+        continue
+    end
+    
+    -- Try claiming this booth up to 3 times
+    local claimed = false
+    for attempt = 1, 3 do
+        -- Teleport closer to the ProximityPrompt's parent (the booth interaction part)
+        local targetCFrame = myBoothInteraction.CFrame * CFrame.new(0, 0, 2)  -- Teleport 2 studs in front
+        teleportTo(targetCFrame)
+        task.wait(0.5)  -- Let physics settle
+        
+        -- Check distance to ProximityPrompt
+        local root = player.Character:FindFirstChild("HumanoidRootPart")
+        if root then
+            local distance = (root.Position - myBoothInteraction.Position).Magnitude
+            log("[DISTANCE] " .. math.floor(distance * 10) / 10 .. " studs from booth interaction")
+        end
+        
+        -- Trigger ProximityPrompt
+        log("[ACTION] Triggering " .. claimPrompt.Name .. " (attempt " .. attempt .. "/3)...")
+        local success, err = pcall(function()
+            fireproximityprompt(claimPrompt)
+        end)
+        
+        if not success then
+            log("[ERROR] ProximityPrompt trigger failed: " .. tostring(err))
+        else
+            log("[ACTION] ProximityPrompt triggered!")
+        end
+        
+        -- Wait longer for server to process
+        task.wait(2)
+        
+        -- Verify claim
+        claimed = verifyClaim(boothLocation, booth.number)
+        if claimed then
+            log("╔═══════════════════════════════════════════════")
+            log("║ [SUCCESS] CLAIMED BOOTH #" .. booth.number .. "!")
+            log("║ Position: " .. tostring(booth.position))
+            log("╚═══════════════════════════════════════════════")
+            saveLog()
+            return
+        else
+            if attempt < 3 then
+                log("[RETRY] Claim didn't register, retrying...")
+            end
+        end
+    end
+    
+    log("[FAILED] Booth #" .. booth.number .. " failed after 3 attempts, trying next...")
+    log("")
+end
+
+log("[FINAL] All booths tried, none claimed!")
+log("")
+saveLog()

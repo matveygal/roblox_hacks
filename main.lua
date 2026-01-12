@@ -7,8 +7,6 @@ local SCRIPT_URL = "https://raw.githubusercontent.com/matveygal/roblox_hacks/mai
 
 local BOOTH_CHECK_POSITION = Vector3.new(165, 0, 311)  -- Center point to search for booths
 local MAX_BOOTH_DISTANCE = 92                          -- Max studs from check position
-local BOOTH_TELEPORT_DELAY = 1                         -- Delay after teleporting to booth before holding E
-local HOLD_E_DURATION = 3                              -- Seconds to hold E
 
 local MESSAGES = {
     "Hey there! Can you donate?", "Hi :) Donation please?", "How's it going? Any loose robux?", "Nice to meet you! GIMME MONEY!!!",
@@ -36,6 +34,28 @@ local JUMP_DURATION     = 0.8
 local MAX_RANDOM_TRIES  = 5
 local SPRINT_KEY        = Enum.KeyCode.LeftShift
 
+-- ==================== FILE LOGGING SETUP ====================
+local logLines = {}
+local function log(msg)
+    local timestamp = os.date("[%Y-%m-%d %H:%M:%S]")
+    local logMsg = timestamp .. " " .. msg
+    print(logMsg)  -- Still print to console for debugging
+    table.insert(logLines, logMsg)
+end
+
+local function saveLog()
+    local content = table.concat(logLines, "\n")
+    writefile("donation_bot.log", content)
+end
+
+-- Auto-save log every 30 seconds
+task.spawn(function()
+    while true do
+        task.wait(30)
+        saveLog()
+    end
+end)
+
 -- ==================== SERVICES & HTTP SETUP ====================
 local Players               = game:GetService("Players")
 local PathfindingService    = game:GetService("PathfindingService")
@@ -48,16 +68,15 @@ local player                = Players.LocalPlayer
 local ignoreList = {}
 
 local httprequest = (syn and syn.request) or http and http.request or http_request or (fluxus and fluxus.request) or request
-local queueFunc = queueonteleport or queue_on_teleport or (syn and syn.queue_on_teleport) or function() warn("[HOP] Queue not supported!") end
+local queueFunc = queueonteleport or queue_on_teleport or (syn and syn.queue_on_teleport) or function() log("[HOP] Queue not supported!") end
 
 -- Wait for character to fully load
 if not player.Character then
-    print("Waiting for character to load...")
+    log("Waiting for character to load...")
     player.CharacterAdded:Wait()
 end
 player.Character:WaitForChild("HumanoidRootPart")
-print("Character loaded!")
-print("[UPDATE] Booth claiming retries infinitely until success")
+log("Character loaded!")
 
 -- ==================== BOOTH CLAIMER ====================
 local function getBoothLocation()
@@ -115,31 +134,6 @@ local function teleportTo(cframe)
     end
 end
 
-local function claimBoothRemote(boothNum)
-    print("[BOOTH] Claiming booth #" .. boothNum .. " via remote...")
-    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    if not remotes then
-        warn("[BOOTH] Remotes folder not found!")
-        return false
-    end
-    local claimRemote = remotes:FindFirstChild("ClaimBooth")
-    if not claimRemote then
-        warn("[BOOTH] ClaimBooth remote not found!")
-        return false
-    end
-    
-    local success, err = pcall(function()
-        claimRemote:InvokeServer(boothNum)
-    end)
-    
-    if not success then
-        warn("[BOOTH] Remote invocation failed: " .. tostring(err))
-        return false
-    end
-    
-    return true
-end
-
 local function verifyClaim(boothLocation, boothNum)
     local boothUI = boothLocation.BoothUI or boothLocation:FindFirstChild("BoothUI")
     if not boothUI then return false end
@@ -150,57 +144,116 @@ local function verifyClaim(boothLocation, boothNum)
     local owner = details:FindFirstChild("Owner")
     if not owner then return false end
     local ownerText = owner.Text
-    print("[DEBUG] Owner text for booth #"..boothNum..": ", ownerText)
     return string.find(ownerText, player.DisplayName) ~= nil or string.find(ownerText, player.Name) ~= nil
 end
 
 local function claimBooth()
-    print("=== BOOTH CLAIMER ===")
+    log("=== BOOTH CLAIMER ===")
     local boothLocation = getBoothLocation()
     if not boothLocation then
-        print("[BOOTH] ERROR: Could not find booth UI!")
+        log("[BOOTH] ERROR: Could not find booth UI!")
         return nil
     end
+    
     local unclaimed = findUnclaimedBooths(boothLocation)
-    print("[BOOTH] Found " .. #unclaimed .. " unclaimed booth(s)")
+    log("[BOOTH] Found " .. #unclaimed .. " unclaimed booth(s)")
+    
     if #unclaimed == 0 then
-        print("[BOOTH] ERROR: No booths available!")
+        log("[BOOTH] ERROR: No booths available!")
         return nil
     end
+    
+    -- Get BoothInteractions reference
+    local boothInteractions = workspace:FindFirstChild("BoothInteractions")
+    if not boothInteractions then
+        log("[BOOTH] ERROR: BoothInteractions not found in Workspace!")
+        return nil
+    end
+    
+    -- Try each booth one by one
     for i, booth in ipairs(unclaimed) do
-        print("[BOOTH] Trying Booth #" .. booth.number .. "...")
-        teleportTo(booth.cframe)
-        task.wait(BOOTH_TELEPORT_DELAY)
+        log("═══════════════════════════════════════")
+        log("[BOOTH] Attempt " .. i .. "/" .. #unclaimed .. " - Trying Booth #" .. booth.number)
         
-        -- Try to claim via remote instead of key simulation
-        local claimed = claimBoothRemote(booth.number)
-        if not claimed then
-            print("[BOOTH] Remote claim failed, skipping...")
+        -- Find the ProximityPrompt for THIS specific booth
+        local myBoothInteraction = nil
+        for _, interact in ipairs(boothInteractions:GetChildren()) do
+            if interact:GetAttribute("BoothSlot") == booth.number then
+                myBoothInteraction = interact
+                break
+            end
+        end
+        
+        if not myBoothInteraction then
+            log("[BOOTH] ERROR: Couldn't find interaction object for booth #" .. booth.number)
             continue
         end
         
-        task.wait(1)
-        local success = verifyClaim(boothLocation, booth.number)
-        print("[DEBUG] verifyClaim result for booth #"..booth.number..": ", success)
-        if success then
-            print("[BOOTH] SUCCESS! Claimed Booth #" .. booth.number)
-            print("[BOOTH] Position: " .. tostring(booth.position))
-            return booth.position
-        else
-            print("[BOOTH] Failed, trying next...")
+        -- Find ProximityPrompt in this booth's interaction
+        local claimPrompt = nil
+        for _, child in ipairs(myBoothInteraction:GetChildren()) do
+            if child:IsA("ProximityPrompt") and child.Name == "Claim" then
+                claimPrompt = child
+                break
+            end
         end
+        
+        if not claimPrompt then
+            log("[BOOTH] ERROR: No Claim ProximityPrompt found for booth #" .. booth.number)
+            continue
+        end
+        
+        -- Try claiming this booth up to 3 times
+        local claimed = false
+        for attempt = 1, 3 do
+            -- Teleport closer to the ProximityPrompt's parent
+            local targetCFrame = myBoothInteraction.CFrame * CFrame.new(0, 0, 2)
+            teleportTo(targetCFrame)
+            task.wait(0.5)
+            
+            -- Trigger ProximityPrompt
+            local success, err = pcall(function()
+                fireproximityprompt(claimPrompt)
+            end)
+            
+            if not success then
+                log("[BOOTH] ProximityPrompt trigger failed: " .. tostring(err))
+            end
+            
+            -- Wait for server to process
+            task.wait(2)
+            
+            -- Verify claim
+            claimed = verifyClaim(boothLocation, booth.number)
+            if claimed then
+                log("╔═══════════════════════════════════════")
+                log("║ [SUCCESS] CLAIMED BOOTH #" .. booth.number .. "!")
+                log("║ Position: " .. tostring(booth.position))
+                log("╚═══════════════════════════════════════")
+                saveLog()
+                return booth.position
+            else
+                if attempt < 3 then
+                    log("[BOOTH] Claim didn't register, retrying...")
+                end
+            end
+        end
+        
+        log("[BOOTH] Failed after 3 attempts, trying next...")
     end
-    print("[BOOTH] All booths tried, retrying from start...")
+    
+    log("[BOOTH] All booths tried, retrying from start...")
     return claimBooth()  -- Recursively retry until success
 end
 
 -- CLAIM BOOTH AND SET HOME POSITION
 local HOME_POSITION = claimBooth()
 if not HOME_POSITION then
-    warn("[BOOTH] Failed to claim booth! Using default position.")
+    log("[BOOTH] Failed to claim booth! Using default position.")
     HOME_POSITION = Vector3.new(94, 4, 281)  -- Fallback position
 end
-print("=== HOME SET TO: " .. tostring(HOME_POSITION) .. " ===")
+log("=== HOME SET TO: " .. tostring(HOME_POSITION) .. " ===")
+saveLog()
 
 -- ==================== SOCIAL BOT LOGIC ====================
 -- ========= CHAT LOGGER + RESPONSE DETECTION =========
@@ -223,7 +276,7 @@ spawn(function()
             ev.OnClientEvent:Connect(function(data)
                 local speaker = data.FromSpeaker
                 local msg = (data.Message or data.OriginalMessage or ""):lower()
-                print(speaker .. ": " .. msg)
+                log(speaker .. ": " .. msg)
                 if speaker and speaker ~= player.Name then
                     lastSpeaker = speaker
                     lastMessage = msg
@@ -246,7 +299,7 @@ spawn(function()
                         if source then
                             local speaker = source.Name
                             local text = (msgObj.Text or ""):lower()
-                            print(speaker .. ": " .. text)
+                            log(speaker .. ": " .. text)
                             if speaker ~= player.Name then
                                 lastSpeaker = speaker
                                 lastMessage = text
@@ -264,7 +317,7 @@ end)
 
 -- Your own chat (just in case)
 player.Chatted:Connect(function(msg)
-    print(player.Name .. ": " .. msg)
+    log(player.Name .. ": " .. msg)
 end)
 
 -- ========= MOVEMENT & DANCE =========
@@ -275,7 +328,7 @@ local DIRECTION_KEYS = {
 }
 
 local function startCircleDance(duration)
-    print("[CIRCLE] Starting circle dance...")
+    log("[CIRCLE] Starting circle dance...")
     VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
     local startTime = tick()
     local step = 1
@@ -287,7 +340,7 @@ local function startCircleDance(duration)
             step = step % 8 + 1
         end
         VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-        print("[CIRCLE] Done")
+        log("[CIRCLE] Done")
     end)
 end
 
@@ -317,7 +370,7 @@ local function performMove(humanoid, root, getPos, sprint)
         task.wait(0.1)
         local pos = getPos()
         if not pos then  -- Target lost mid-move
-            print("[MOVE] Target lost mid-chase! Stopping movement.")
+            log("[MOVE] Target lost mid-chase! Stopping movement.")
             if sprint then stopSprinting() end
             return false
         end
@@ -338,14 +391,14 @@ local function performMove(humanoid, root, getPos, sprint)
         if stuckTime >= STUCK_CHECK_TIME then
             if jumpTries < MAX_JUMP_TRIES then
                 jumpTries += 1
-                print("[ANTI-STUCK] Jump unstick #"..jumpTries)
+                log("[ANTI-STUCK] Jump unstuck #"..jumpTries)
                 VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
                 task.wait(JUMP_DURATION)
                 VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
                 task.wait(0.5)
             else
                 randTries += 1
-                print("[ANTI-STUCK] Random dodge #"..randTries)
+                log("[ANTI-STUCK] Random dodge #"..randTries)
                 local a = math.random() * math.pi * 2
                 local dodge = pos + Vector3.new(math.cos(a)*80, 0, math.sin(a)*80)
                 humanoid:MoveTo(dodge)
@@ -367,7 +420,7 @@ local function chasePlayer(t)
     local h = player.Character:FindFirstChild("Humanoid")
     local r = player.Character:FindFirstChild("HumanoidRootPart")
     if not h or not r then return false end
-    print("[CHASE] Going to " .. t.Name)
+    log("[CHASE] Going to " .. t.Name)
     
     local function safeGetPos()
         local targetHRP = t.Character and t.Character:FindFirstChild("HumanoidRootPart")
@@ -385,7 +438,7 @@ local function returnHome()
     local h = player.Character:FindFirstChild("Humanoid")
     local r = player.Character:FindFirstChild("HumanoidRootPart")
     if not h or not r then return false end
-    print("[HOME] Returning home...")
+    log("[HOME] Returning home...")
     return performMove(h, r, function() return HOME_POSITION end, false)
 end
 
@@ -418,7 +471,7 @@ local function findClosest()
     local best, bestT = nil, math.huge
     local allPlayers = Players:GetPlayers()
     if not allPlayers then
-        warn("[DEBUG] Players:GetPlayers() returned nil!")
+        log("[DEBUG] Players:GetPlayers() returned nil!")
         return nil
     end
     for _, p in ipairs(allPlayers) do
@@ -441,12 +494,12 @@ end
 local function nextPlayer()
     local target = findClosest()
     if not target then
-        print("[MAIN] Everyone greeted — going home")
+        log("[MAIN] Everyone greeted — going home")
         returnHome()
         return false
     end
 
-    print("[MAIN] Target → " .. target.Name)
+    log("[MAIN] Target → " .. target.Name)
 
     if chasePlayer(target) then
         sendChat(target.Name .. " " .. MESSAGES[math.random(#MESSAGES)])
@@ -457,12 +510,12 @@ local function nextPlayer()
 
         -- === WAIT FOR RESPONSE ===
         resetResponse()
-        print("[WAIT] Waiting " .. WAIT_FOR_ANSWER_TIME .. "s for " .. target.Name .. "'s reply...")
+        log("[WAIT] Waiting " .. WAIT_FOR_ANSWER_TIME .. "s for " .. target.Name .. "'s reply...")
         local start = tick()
         while tick() - start < WAIT_FOR_ANSWER_TIME do
             -- Check if target still exists
             if not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then
-                print("[WAIT] Target left, moving on")
+                log("[WAIT] Target left, moving on")
                 ignoreList[target.UserId] = true
                 break
             end
@@ -476,7 +529,7 @@ local function nextPlayer()
                 
                 -- If target is too far, follow them
                 if distance > MAX_WAIT_DISTANCE then
-                    print("[WAIT] Target moving away, following...")
+                    log("[WAIT] Target moving away, following...")
                     local humanoid = player.Character:FindFirstChild("Humanoid")
                     if humanoid then
                         humanoid:MoveTo(targetRoot.Position)
@@ -490,7 +543,7 @@ local function nextPlayer()
             
             if responseReceived and lastSpeaker == target.Name then
                 local msg = lastMessage
-                print("[RESPONSE] " .. target.Name .. " said: " .. msg)
+                log("[RESPONSE] " .. target.Name .. " said: " .. msg)
 
                 local saidYes = false
                 for _, word in ipairs(YES_LIST) do
@@ -519,7 +572,7 @@ local function nextPlayer()
         end
 
         -- No reply or unclear
-        print("[WAIT] No valid reply from " .. target.Name .. " — moving on")
+        log("[WAIT] No valid reply from " .. target.Name .. " — moving on")
         ignoreList[target.UserId] = true
     else
         ignoreList[target.UserId] = true
@@ -531,7 +584,7 @@ end
 
 -- ==================== SERVER HOP FUNCTION ====================
 local function serverHop()
-    print("[HOP] Starting server hop...")
+    log("[HOP] Starting server hop...")
     
     -- First return home before hopping
     returnHome()
@@ -552,9 +605,9 @@ local function serverHop()
         end)
         
         if not success or not response then
-            warn("[HOP] HTTP request failed, retrying in 5s...")
+            log("[HOP] HTTP request failed, retrying in 5s...")
             if not success then
-                warn("[HOP DEBUG] Request error: " .. tostring(response))
+                log("[HOP DEBUG] Request error: " .. tostring(response))
             end
             task.wait(5)
             cursor = ""
@@ -563,11 +616,11 @@ local function serverHop()
         
         -- Check if response.Body exists before parsing
         if not response.Body then
-            warn("[HOP] Response has no Body field!")
-            warn("[HOP DEBUG] Response type: " .. type(response))
-            warn("[HOP DEBUG] Response fields:")
+            log("[HOP] Response has no Body field!")
+            log("[HOP DEBUG] Response type: " .. type(response))
+            log("[HOP DEBUG] Response fields:")
             for k, v in pairs(response) do
-                warn("  " .. tostring(k) .. ": " .. type(v))
+                log("  " .. tostring(k) .. ": " .. type(v))
             end
             task.wait(5)
             cursor = ""
@@ -592,12 +645,12 @@ local function serverHop()
             table.sort(servers, function(a, b) return (a.playing or 0) > (b.playing or 0) end)
             
             if #servers > 0 then
-                print("[HOP] Found " .. #servers .. " suitable servers")
+                log("[HOP] Found " .. #servers .. " suitable servers")
                 
                 for _, selected in ipairs(servers) do
                     local playing = selected.playing or "?"
                     local maxP = selected.maxPlayers or "?"
-                    print("[HOP] Trying server " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
+                    log("[HOP] Trying server " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
                     
                     -- Queue the script for next server
                     queueFunc('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
@@ -607,37 +660,37 @@ local function serverHop()
                     end)
                     
                     if tpOk then
-                        print("[HOP] Teleport initiated! See you on the other side...")
+                        log("[HOP] Teleport initiated! See you on the other side...")
                         hopped = true
                         task.wait(15)  -- Wait for teleport to process
                         break
                     else
-                        warn("[HOP] Teleport failed: " .. tostring(err) .. " - trying next...")
+                        log("[HOP] Teleport failed: " .. tostring(err) .. " - trying next...")
                         task.wait(TELEPORT_RETRY_DELAY)
                     end
                 end
             else
-                print("[HOP] No suitable servers on this page")
+                log("[HOP] No suitable servers on this page")
             end
             
             if body.nextPageCursor and not hopped then
                 cursor = body.nextPageCursor
-                print("[HOP] Checking next page...")
+                log("[HOP] Checking next page...")
             else
                 if not hopped then
-                    warn("[HOP] No suitable servers found. Retrying in 10s...")
+                    log("[HOP] No suitable servers found. Retrying in 10s...")
                     task.wait(10)
                     cursor = ""
                 end
             end
         else
-            warn("[HOP] Failed to parse response, retrying in 5s...")
-            warn("[HOP DEBUG] Parse error: " .. tostring(body))
-            warn("[HOP DEBUG] Response status: " .. tostring(response.StatusCode or "N/A"))
-            warn("[HOP DEBUG] Response body type: " .. type(response.Body))
-            warn("[HOP DEBUG] Response body length: " .. #tostring(response.Body))
-            warn("[HOP DEBUG] First 500 chars of body:")
-            warn(string.sub(tostring(response.Body), 1, 500))
+            log("[HOP] Failed to parse response, retrying in 5s...")
+            log("[HOP DEBUG] Parse error: " .. tostring(body))
+            log("[HOP DEBUG] Response status: " .. tostring(response.StatusCode or "N/A"))
+            log("[HOP DEBUG] Response body type: " .. type(response.Body))
+            log("[HOP DEBUG] Response body length: " .. #tostring(response.Body))
+            log("[HOP DEBUG] First 500 chars of body:")
+            log(string.sub(tostring(response.Body), 1, 500))
             task.wait(5)
             cursor = ""
         end
@@ -645,8 +698,8 @@ local function serverHop()
 end
 
 -- ========= START =========
-print("=== SOCIAL GREETER BOT – ULTIMATE EDITION ===")
-print("=== AUTO BOOTH CLAIM + SERVER HOP ===")
+log("=== SOCIAL GREETER BOT – ULTIMATE EDITION ===")
+log("=== AUTO BOOTH CLAIM + SERVER HOP ===")
 if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
     player.CharacterAdded:Wait()
     task.wait(2)
@@ -655,8 +708,9 @@ end
 -- Main loop: greet everyone, then hop
 while nextPlayer() do end
 
-print("[MAIN] Everyone greeted on this server!")
-print("[MAIN] Initiating server hop...")
+log("[MAIN] Everyone greeted on this server!")
+log("[MAIN] Initiating server hop...")
 serverHop()
 
-print("=== BOT FINISHED ===")
+log("=== BOT FINISHED ===")
+saveLog()

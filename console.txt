@@ -1,0 +1,395 @@
+[TEST] Attempting to claim booths one by one...
+
+[FOUND] 11 unclaimed booth(s)
+[SCAN] Scanning BoothInteractions structure...
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 2
+    [SUBCHILD] BoothModel | Type: ObjectValue
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 3
+    [SUBCHILD] BoothModel | Type: ObjectValue
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 4
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 6
+    [SUBCHILD] BoothModel | Type: ObjectValue
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 7
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 8
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 9
+    [SUBCHILD] BoothModel | Type: ObjectValue
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 38
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 29
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 1
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 26
+    [SUBCHILD] BoothModel | Type: ObjectValue
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 33
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 10
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 22
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 28
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 19
+    [SUBCHILD] BoothModel | Type: ObjectValue
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 30
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 15
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 11
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 12
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 21
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 24
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 13
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 31
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 14
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 37
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 16
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 36
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 23
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 20
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 35
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 25
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 32
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 18
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 27
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 39
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 34
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+  [CHILD] BoothInteraction | Type: Part
+    BoothSlot attribute: 17
+    [SUBCHILD] Edit | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] Claim | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] ViewItems | Type: ProximityPrompt
+      ⚡ ProximityPrompt! MaxDistance: 5
+    [SUBCHILD] BoothModel | Type: ObjectValue
+
+═══════════════════════════════════════════════
+[ATTEMPT 1/11] Trying Booth #18
+[INFO] Distance: 74 studs
+[FOUND] This booth's interaction object: BoothInteraction
+[FOUND] ProximityPrompt: Claim | MaxDistance: 5
+[DISTANCE] 2 studs from booth interaction
+[ACTION] Triggering Claim (attempt 1/3)...
+[ACTION] ProximityPrompt triggered!
+[VERIFY] Owner text for booth #18: unclaimed
+[RETRY] Claim didn't register, retrying...
+[DISTANCE] 2 studs from booth interaction
+[ACTION] Triggering Claim (attempt 2/3)...
+[ACTION] ProximityPrompt triggered!
+[VERIFY] Owner text for booth #18: unclaimed
+[RETRY] Claim didn't register, retrying...
+[DISTANCE] 2 studs from booth interaction
+[ACTION] Triggering Claim (attempt 3/3)...
+[ACTION] ProximityPrompt triggered!
+[VERIFY] Owner text for booth #18: unclaimed
+[FAILED] Booth #18 failed after 3 attempts, trying next...
+
+═══════════════════════════════════════════════
+[ATTEMPT 2/11] Trying Booth #14
+[INFO] Distance: 75 studs
+[FOUND] This booth's interaction object: BoothInteraction
+[FOUND] ProximityPrompt: Claim | MaxDistance: 5
+[DISTANCE] 1.9 studs from booth interaction
+[ACTION] Triggering Claim (attempt 1/3)...
+[ACTION] ProximityPrompt triggered!
+[VERIFY] Owner text for booth #14: unclaimed
+[RETRY] Claim didn't register, retrying...
+[DISTANCE] 1.9 studs from booth interaction
+[ACTION] Triggering Claim (attempt 2/3)...
+[ACTION] ProximityPrompt triggered!
+[VERIFY] Owner text for booth #14:  LinkingIcecream's stand
+╔═══════════════════════════════════════════════
+║ [SUCCESS] CLAIMED BOOTH #14!
+║ Position: 98.7099380493164, 4.972996234893799, 346.6950988769531
+╚═══════════════════════════════════════════════
