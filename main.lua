@@ -7,10 +7,73 @@ local SCRIPT_URL = "https://raw.githubusercontent.com/matveygal/roblox_hacks/mai
 
 local BOOTH_CHECK_POSITION = Vector3.new(165, 0, 311)  -- Center point to search for booths
 local MAX_BOOTH_DISTANCE = 92                          -- Max studs from check position
+local TYPO_CHANCE = 0.45                               -- 15% chance to send message with typo
 
 local MESSAGES = {
-    "Hey there! Can you donate?", "Hi :) Donation please?", "How's it going? Any loose robux?", "Nice to meet you! GIMME MONEY!!!",
-    "Yo! Robux please?", "What's up? Any robux for me?", "Love your vibe and your robux. Can I have some?", "GG! DONATE!", "You're awesome! Any money for me?"
+    "hey! donate pls? :)",
+    "hi! can u donate?",
+    "hello! donation? :D",
+    "hey donate maybe?",
+    "hi! pls donate im trying to save up",
+    "heyy any donations?",
+    "hello donate pls",
+    "hi! help me out? any robux appreciated",
+    "hey! donate? :)",
+    "hii pls donate ty",
+    "hey can u donate im close to my goal",
+    "hello! robux pls?",
+    "hi donate pls :D",
+    "heyy donation? would mean a lot",
+    "hey! pls help",
+    "hi! any robux? trying to get something cool",
+    "hello donate ty",
+    "hey! can u help? even small amount helps",
+    "hi pls donate :)",
+    "heyy robux pls",
+    "hey donate? ty appreciate it",
+    "hi! help pls",
+    "hello donation pls working towards smth",
+    "hey! donate ty :D",
+    "hi can u donate?",
+    "heyy pls help out any amount works",
+    "hey donate pls :)",
+    "hi! any donations? been grinding all day",
+    "hello robux pls",
+    "hey! pls donate"
+}
+
+-- Typo variations (3 per message, realistic keyboard mistakes)
+local MESSAGE_TYPOS = {
+    {"hry! donate pls? :)", "hey! dinate pls? :)", "hey! donate pld? :)"},
+    {"hi! csn u donate?", "hi! can u dknate?", "hi! can u donatw?"},
+    {"hrllo! donation? :D", "hello! donatiob? :D", "hello! donatipn? :D"},
+    {"heu donate maybe?", "hey dontae maybe?", "hey donate maybr?"},
+    {"hi! pks donate im trying to save up", "hi! pls donsre im trying to save up", "hi! pls donate im tryinf to save up"},
+    {"heyy anu donations?", "heyy any donatiins?", "heyy any donatuons?"},
+    {"hrllo donate pls", "hello dinate pls", "hello donate pld"},
+    {"hi! hwlp me out? any robux appreciated", "hi! help me oit? any robux appreciated", "hi! help me out? any robix appreciated"},
+    {"hry! donate? :)", "hey! dinate? :)", "hey! donatr? :)"},
+    {"hii pks donate ty", "hii pls dknate ty", "hii pls donate ry"},
+    {"hry can u donate im close to my goal", "hey csn u donate im close to my goal", "hey can u donsre im close to my goal"},
+    {"hrllo! robux pls?", "hello! robix pls?", "hello! robux pld?"},
+    {"hi dinate pls :D", "hi donate pld :D", "hi donate pla :D"},
+    {"heyy donatiom? would mean a lot", "heyy donation? woulf mean a lot", "heyy donatiin? would mean a lot"},
+    {"hry! pls help", "hey! pld help", "hey! pls hwlp"},
+    {"hi! any robix? trying to get something cool", "hi! any robux? tryinf to get something cool", "hi! any robux? trying to grt something cool"},
+    {"hrllo donate ty", "hello dknate ty", "hello donate ry"},
+    {"hry! can u help? even small amount helps", "hey! csn u help? even small amount helps", "hey! can u hwlp? even small amount helps"},
+    {"hi pld donate :)", "hi pls dknate :)", "hi pls donate :0"},
+    {"heyy robix pls", "hryy robux pls", "heyy robux pld"},
+    {"hry donate? ty appreciate it", "hey dknate? ty appreciate it", "hey donate? ty apprexiate it"},
+    {"hi! hwlp pls", "hi! help pld", "hi! gelp pls"},
+    {"hrllo donation pls working towards smth", "hello donatiom pls working towards smth", "hello donation pls workibg towards smth"},
+    {"hry! donate ty :D", "hey! dknate ty :D", "hey! donate ry :D"},
+    {"hi csn u donate?", "hi can u dinate?", "hi can u donatw?"},
+    {"heyy pld help out any amount works", "hryy pls help out any amount works", "heyy pls hwlp out any amount works"},
+    {"hry donate pls :)", "hey dknate pls :)", "hey donate pld :)"},
+    {"hi! any donatioms? been grinding all day", "hi! any donations? bren grinding all day", "hi! any donations? been grindibg all day"},
+    {"hrllo robux pls", "hello robix pls", "hello robux pld"},
+    {"hry! pls donate", "hey! pld donate", "hey! pls dknate"}
 }
 
 local WAIT_FOR_ANSWER_TIME = 7        -- seconds to wait for reply
@@ -490,6 +553,20 @@ local function findClosest()
     return best
 end
 
+-- ========= MESSAGE WITH TYPO CHANCE =========
+local function getRandomMessage()
+    local msgIndex = math.random(#MESSAGES)
+    
+    -- Roll for typo chance
+    if math.random() < TYPO_CHANCE then
+        -- Pick a random typo variant (1-3)
+        local typoVariant = math.random(3)
+        return MESSAGE_TYPOS[msgIndex][typoVariant]
+    else
+        return MESSAGES[msgIndex]
+    end
+end
+
 -- ========= MAIN LOGIC WITH CHAT RESPONSE =========
 local function nextPlayer()
     local target = findClosest()
@@ -502,7 +579,7 @@ local function nextPlayer()
     log("[MAIN] Target → " .. target.Name)
 
     if chasePlayer(target) then
-        sendChat(target.Name .. " " .. MESSAGES[math.random(#MESSAGES)])
+        sendChat(string.lower(target.Name) .. " " .. getRandomMessage())
         startCircleDance(CIRCLE_COOLDOWN)
         task.wait(CIRCLE_COOLDOWN)
         faceTargetBriefly(target)
