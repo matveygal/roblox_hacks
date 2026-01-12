@@ -729,11 +729,18 @@ local function serverHop()
                     local maxP = selected.maxPlayers or "?"
                     log("[HOP] Trying server " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
                     
+                    -- Wait before teleporting to avoid rate limiting
+                    task.wait(2)
+                    
                     -- Queue the script for next server
                     queueFunc('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
                     
+                    -- Use TeleportOptions for better reliability
+                    local teleportOptions = Instance.new("TeleportOptions")
+                    teleportOptions.ShouldReserveServer = false
+                    
                     local tpOk, err = pcall(function()
-                        TeleportService:TeleportToPlaceInstance(PLACE_ID, selected.id, player)
+                        TeleportService:TeleportToPlaceInstance(PLACE_ID, selected.id, player, teleportOptions)
                     end)
                     
                     if tpOk then
