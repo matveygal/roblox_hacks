@@ -743,10 +743,11 @@ local function serverHop()
                     end)
                     
                     if tpOk then
-                        log("[HOP] Teleport initiated! See you on the other side...")
-                        hopped = true
-                        task.wait(15)  -- Wait for teleport to process
-                        break
+                        log("[HOP] Teleport initiated! Waiting for teleport...")
+                        -- Wait indefinitely for teleport - if we're still here after 60s, something is wrong
+                        task.wait(60)
+                        log("[HOP] Teleport seems to have failed, trying next server...")
+                        task.wait(TELEPORT_RETRY_DELAY)
                     else
                         log("[HOP] Teleport failed: " .. tostring(err) .. " - trying next...")
                         task.wait(TELEPORT_RETRY_DELAY)
@@ -788,12 +789,20 @@ if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart
     task.wait(2)
 end
 
--- Main loop: greet everyone, then hop
+-- Main loop: greet everyone, then hop (server hop never returns, it keeps trying)
 while nextPlayer() do end
 
 log("[MAIN] Everyone greeted on this server!")
 log("[MAIN] Initiating server hop...")
 serverHop()
 
-log("=== BOT FINISHED ===")
-saveLog()
+-- Script should never reach here because serverHop loops forever
+log("[ERROR] Server hop ended unexpectedly! Restarting...")
+task.wait(5)
+-- Restart by re-running from greeting phase
+while true do
+    while nextPlayer() do end
+    log("[MAIN] Everyone greeted on this server!")
+    log("[MAIN] Initiating server hop...")
+    serverHop()
+end
