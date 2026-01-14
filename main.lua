@@ -407,6 +407,23 @@ local function startCircleDance(duration)
     end)
 end
 
+-- Wait with anti-AFK movement (circle dance every 10 seconds)
+local function waitWithMovement(duration)
+    local elapsed = 0
+    while elapsed < duration do
+        local waitTime = math.min(10, duration - elapsed)
+        task.wait(waitTime)
+        elapsed = elapsed + waitTime
+        
+        -- Do a quick circle dance if we have more time to wait
+        if elapsed < duration then
+            startCircleDance(3)
+            task.wait(3)
+            elapsed = elapsed + 3
+        end
+    end
+end
+
 local isSprinting = false
 
 local function startSprinting()
@@ -689,7 +706,7 @@ local function serverHop()
             if not success then
                 log("[HOP DEBUG] Request error: " .. tostring(response))
             end
-            task.wait(5)
+            waitWithMovement(5)
             cursor = ""
             continue
         end
@@ -698,7 +715,7 @@ local function serverHop()
         if not response.Body then
             log("[HOP] Response has no Body field! Likely rate-limited by Roblox.")
             log("[HOP] Waiting 10 seconds before retrying...")
-            task.wait(10)  -- Longer wait to let rate limit reset
+            waitWithMovement(10)  -- Longer wait to let rate limit reset
             cursor = ""
             continue
         end
@@ -745,12 +762,12 @@ local function serverHop()
                     if tpOk then
                         log("[HOP] Teleport initiated! Waiting for teleport...")
                         -- Wait indefinitely for teleport - if we're still here after 60s, something is wrong
-                        task.wait(60)
+                        waitWithMovement(60)
                         log("[HOP] Teleport seems to have failed, trying next server...")
-                        task.wait(TELEPORT_RETRY_DELAY)
+                        waitWithMovement(TELEPORT_RETRY_DELAY)
                     else
                         log("[HOP] Teleport failed: " .. tostring(err) .. " - trying next...")
-                        task.wait(TELEPORT_RETRY_DELAY)
+                        waitWithMovement(TELEPORT_RETRY_DELAY)
                     end
                 end
             else
@@ -763,7 +780,7 @@ local function serverHop()
             else
                 if not hopped then
                     log("[HOP] No suitable servers found. Retrying in 10s...")
-                    task.wait(10)
+                    waitWithMovement(10)
                     cursor = ""
                 end
             end
@@ -775,7 +792,7 @@ local function serverHop()
             log("[HOP DEBUG] Response body length: " .. #tostring(response.Body))
             log("[HOP DEBUG] First 500 chars of body:")
             log(string.sub(tostring(response.Body), 1, 500))
-            task.wait(5)
+            waitWithMovement(5)
             cursor = ""
         end
     end
