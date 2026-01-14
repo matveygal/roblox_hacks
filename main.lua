@@ -714,8 +714,8 @@ local function serverHop()
         -- Check if response.Body exists before parsing
         if not response.Body then
             log("[HOP] Response has no Body field! Likely rate-limited by Roblox.")
-            log("[HOP] Waiting 10 seconds before retrying...")
-            waitWithMovement(10)  -- Longer wait to let rate limit reset
+            log("[HOP] Waiting 20 seconds before retrying...")
+            waitWithMovement(20)  -- Longer wait to let rate limit reset
             cursor = ""
             continue
         end
