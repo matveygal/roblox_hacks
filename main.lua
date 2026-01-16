@@ -684,17 +684,13 @@ local function serverHop()
     returnHome()
     task.wait(1)
     
-    local cursor = ""
-    local hopped = false
-    
-    while not hopped do
-        -- Small delay before each API request to avoid rate limiting
-        task.wait(2)
+    -- Simple approach: get first page of servers and pick one
+    while true do
+        task.wait(2)  -- Rate limit protection
         
         local url = string.format(
-            "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100%s",
-            PLACE_ID,
-            cursor ~= "" and "&cursor=" .. cursor or ""
+            "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100",
+            PLACE_ID
         )
         
         local success, response = pcall(function()
@@ -707,16 +703,13 @@ local function serverHop()
                 log("[HOP DEBUG] Request error: " .. tostring(response))
             end
             waitWithMovement(5)
-            cursor = ""
             continue
         end
         
-        -- Check if response.Body exists before parsing
         if not response.Body then
             log("[HOP] Response has no Body field! Likely rate-limited by Roblox.")
             log("[HOP] Waiting 20 seconds before retrying...")
-            waitWithMovement(20)  -- Longer wait to let rate limit reset
-            cursor = ""
+            waitWithMovement(20)
             continue
         end
         
@@ -724,76 +717,67 @@ local function serverHop()
             return HttpService:JSONDecode(response.Body) 
         end)
         
-        if bodySuccess and body and body.data then
-            local servers = {}
-            for _, server in pairs(body.data) do
-                if server.id ~= game.JobId 
-                    and server.playing >= MIN_PLAYERS 
-                    and server.playing <= MAX_PLAYERS_ALLOWED then
-                    table.insert(servers, server)
-                end
-            end
-            
-            -- Sort by most players (more players = more donations potential)
-            table.sort(servers, function(a, b) return (a.playing or 0) > (b.playing or 0) end)
-            
-            if #servers > 0 then
-                log("[HOP] Found " .. #servers .. " suitable servers")
-                
-                for _, selected in ipairs(servers) do
-                    local playing = selected.playing or "?"
-                    local maxP = selected.maxPlayers or "?"
-                    log("[HOP] Trying server " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
-                    
-                    -- Wait before teleporting to avoid rate limiting
-                    task.wait(2)
-                    
-                    -- Queue the script for next server
-                    queueFunc('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
-                    
-                    -- Use TeleportOptions for better reliability
-                    local teleportOptions = Instance.new("TeleportOptions")
-                    teleportOptions.ShouldReserveServer = false
-                    
-                    local tpOk, err = pcall(function()
-                        TeleportService:TeleportToPlaceInstance(PLACE_ID, selected.id, player, teleportOptions)
-                    end)
-                    
-                    if tpOk then
-                        log("[HOP] Teleport initiated! Waiting for teleport...")
-                        -- Wait indefinitely for teleport - if we're still here after 60s, something is wrong
-                        waitWithMovement(60)
-                        log("[HOP] Teleport seems to have failed, trying next server...")
-                        waitWithMovement(TELEPORT_RETRY_DELAY)
-                    else
-                        log("[HOP] Teleport failed: " .. tostring(err) .. " - trying next...")
-                        waitWithMovement(TELEPORT_RETRY_DELAY)
-                    end
-                end
-            else
-                log("[HOP] No suitable servers on this page")
-            end
-            
-            if body.nextPageCursor and not hopped then
-                cursor = body.nextPageCursor
-                log("[HOP] Checking next page...")
-            else
-                if not hopped then
-                    log("[HOP] No suitable servers found. Retrying in 10s...")
-                    waitWithMovement(10)
-                    cursor = ""
-                end
-            end
-        else
+        if not bodySuccess or not body or not body.data then
             log("[HOP] Failed to parse response, retrying in 5s...")
             log("[HOP DEBUG] Parse error: " .. tostring(body))
-            log("[HOP DEBUG] Response status: " .. tostring(response.StatusCode or "N/A"))
-            log("[HOP DEBUG] Response body type: " .. type(response.Body))
-            log("[HOP DEBUG] Response body length: " .. #tostring(response.Body))
-            log("[HOP DEBUG] First 500 chars of body:")
-            log(string.sub(tostring(response.Body), 1, 500))
+            if response then
+                log("[HOP DEBUG] Response status: " .. tostring(response.StatusCode or "N/A"))
+                log("[HOP DEBUG] Response body type: " .. type(response.Body))
+                log("[HOP DEBUG] Response body length: " .. #tostring(response.Body))
+            end
             waitWithMovement(5)
-            cursor = ""
+            continue
+        end
+        
+        -- Collect all valid servers (not current server)
+        local servers = {}
+        for _, server in pairs(body.data) do
+            if server.id ~= game.JobId 
+                and server.playing >= MIN_PLAYERS 
+                and server.playing <= MAX_PLAYERS_ALLOWED then
+                table.insert(servers, server)
+            end
+        end
+        
+        if #servers == 0 then
+            log("[HOP] No suitable servers found on this page, retrying in 10s...")
+            waitWithMovement(10)
+            continue
+        end
+        
+        -- Sort by player count (more players = more donation potential)
+        table.sort(servers, function(a, b) return (a.playing or 0) > (b.playing or 0) end)
+        
+        -- Pick the best server
+        local selected = servers[1]
+        local playing = selected.playing or "?"
+        local maxP = selected.maxPlayers or "?"
+        log("[HOP] Found " .. #servers .. " suitable servers, selecting best: " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
+        
+        -- Queue script for next server
+        queueFunc('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
+        
+        -- Attempt teleport
+        local teleportOptions = Instance.new("TeleportOptions")
+        teleportOptions.ShouldReserveServer = false
+        
+        local tpOk, err = pcall(function()
+            TeleportService:TeleportToPlaceInstance(PLACE_ID, selected.id, player, teleportOptions)
+        end)
+        
+        if tpOk then
+            log("[HOP] Teleport initiated successfully! Waiting indefinitely with anti-AFK movement...")
+            -- If teleport was initiated, wait indefinitely (it should work eventually)
+            -- Keep moving to prevent AFK kick while waiting
+            while true do
+                waitWithMovement(30)
+                log("[HOP] Still waiting for teleport to complete...")
+            end
+        else
+            log("[HOP] Teleport call failed: " .. tostring(err))
+            log("[HOP] Retrying in " .. TELEPORT_RETRY_DELAY .. "s...")
+            waitWithMovement(TELEPORT_RETRY_DELAY)
+            -- Loop will retry with a fresh server list
         end
     end
 end
