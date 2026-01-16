@@ -684,13 +684,15 @@ local function serverHop()
     returnHome()
     task.wait(1)
     
-    -- Simple approach: get first page of servers and pick one
+    local cursor = ""
+    
     while true do
         task.wait(2)  -- Rate limit protection
         
         local url = string.format(
-            "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100",
-            PLACE_ID
+            "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100%s",
+            PLACE_ID,
+            cursor ~= "" and "&cursor=" .. cursor or ""
         )
         
         local success, response = pcall(function()
@@ -739,45 +741,52 @@ local function serverHop()
             end
         end
         
-        if #servers == 0 then
-            log("[HOP] No suitable servers found on this page, retrying in 10s...")
-            waitWithMovement(10)
-            continue
-        end
-        
-        -- Sort by player count (more players = more donation potential)
-        table.sort(servers, function(a, b) return (a.playing or 0) > (b.playing or 0) end)
-        
-        -- Pick the best server
-        local selected = servers[1]
-        local playing = selected.playing or "?"
-        local maxP = selected.maxPlayers or "?"
-        log("[HOP] Found " .. #servers .. " suitable servers, selecting best: " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
-        
-        -- Queue script for next server
-        queueFunc('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
-        
-        -- Attempt teleport
-        local teleportOptions = Instance.new("TeleportOptions")
-        teleportOptions.ShouldReserveServer = false
-        
-        local tpOk, err = pcall(function()
-            TeleportService:TeleportToPlaceInstance(PLACE_ID, selected.id, player, teleportOptions)
-        end)
-        
-        if tpOk then
-            log("[HOP] Teleport initiated successfully! Waiting indefinitely with anti-AFK movement...")
-            -- If teleport was initiated, wait indefinitely (it should work eventually)
-            -- Keep moving to prevent AFK kick while waiting
-            while true do
-                waitWithMovement(30)
-                log("[HOP] Still waiting for teleport to complete...")
+        if #servers > 0 then
+            -- Sort by player count (more players = more donation potential)
+            table.sort(servers, function(a, b) return (a.playing or 0) > (b.playing or 0) end)
+            
+            -- Pick the best server
+            local selected = servers[1]
+            local playing = selected.playing or "?"
+            local maxP = selected.maxPlayers or "?"
+            log("[HOP] Found " .. #servers .. " suitable servers on this page, selecting best: " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
+            
+            -- Queue script for next server
+            queueFunc('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
+            
+            -- Attempt teleport
+            local teleportOptions = Instance.new("TeleportOptions")
+            teleportOptions.ShouldReserveServer = false
+            
+            local tpOk, err = pcall(function()
+                TeleportService:TeleportToPlaceInstance(PLACE_ID, selected.id, player, teleportOptions)
+            end)
+            
+            if tpOk then
+                log("[HOP] Teleport initiated successfully! Waiting indefinitely with anti-AFK movement...")
+                -- If teleport was initiated, wait indefinitely (it should work eventually)
+                -- Keep moving to prevent AFK kick while waiting
+                while true do
+                    waitWithMovement(30)
+                    log("[HOP] Still waiting for teleport to complete...")
+                end
+            else
+                log("[HOP] Teleport call failed: " .. tostring(err))
+                log("[HOP] Retrying in " .. TELEPORT_RETRY_DELAY .. "s...")
+                waitWithMovement(TELEPORT_RETRY_DELAY)
+                -- Continue to next iteration (will try same page again)
             end
         else
-            log("[HOP] Teleport call failed: " .. tostring(err))
-            log("[HOP] Retrying in " .. TELEPORT_RETRY_DELAY .. "s...")
-            waitWithMovement(TELEPORT_RETRY_DELAY)
-            -- Loop will retry with a fresh server list
+            -- No suitable servers on this page, check if there's a next page
+            if body.nextPageCursor then
+                cursor = body.nextPageCursor
+                log("[HOP] No suitable servers on this page, checking next page...")
+            else
+                -- Exhausted all pages, start over from beginning
+                log("[HOP] Exhausted all pages with no suitable servers. Starting over from page 1 in 10s...")
+                waitWithMovement(10)
+                cursor = ""
+            end
         end
     end
 end
