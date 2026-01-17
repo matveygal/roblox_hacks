@@ -2,7 +2,8 @@
 local PLACE_ID = 8737602449                            -- Please Donate place ID
 local MIN_PLAYERS = 4                                  -- Minimum players in server
 local MAX_PLAYERS_ALLOWED = 24                         -- Maximum players in server
-local TELEPORT_RETRY_DELAY = 4                         -- Delay between teleport attempts (prevents rate limiting)
+local TELEPORT_RETRY_DELAY = 8                         -- Delay between teleport attempts (increased from 4)
+local TELEPORT_COOLDOWN = 30                           -- Cooldown between failed servers to avoid rate limit detection
 local SCRIPT_URL = "https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"
 
 local BOOTH_CHECK_POSITION = Vector3.new(165, 0, 311)  -- Center point to search for booths
@@ -747,53 +748,52 @@ local function serverHop()
             
             log("[HOP] Found " .. #servers .. " suitable servers on this page")
             
-            -- Try multiple servers from this batch (up to 3) before moving to next page
-            for i = 1, math.min(3, #servers) do
-                local selected = servers[i]
-                local playing = selected.playing or "?"
-                local maxP = selected.maxPlayers or "?"
-                log("[HOP] Trying server " .. i .. "/" .. math.min(3, #servers) .. ": " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
+            -- Try only 1 server per page to reduce API spam and avoid rate limiting
+            local selected = servers[1]
+            local playing = selected.playing or "?"
+            local maxP = selected.maxPlayers or "?"
+            log("[HOP] Trying server: " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
+            
+            -- Queue script for next server
+            queueFunc('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
+            
+            -- Attempt teleport
+            local teleportOptions = Instance.new("TeleportOptions")
+            teleportOptions.ShouldReserveServer = false
+            
+            local tpOk, err = pcall(function()
+                TeleportService:TeleportToPlaceInstance(PLACE_ID, selected.id, player, teleportOptions)
+            end)
+            
+            if tpOk then
+                log("[HOP] Teleport initiated! Waiting up to 3 minutes with anti-AFK movement...")
+                -- Wait up to 3 minutes for teleport to complete
+                local waitStart = tick()
+                local maxWaitTime = 180  -- 3 minutes
                 
-                -- Queue script for next server
-                queueFunc('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
-                
-                -- Attempt teleport
-                local teleportOptions = Instance.new("TeleportOptions")
-                teleportOptions.ShouldReserveServer = false
-                
-                local tpOk, err = pcall(function()
-                    TeleportService:TeleportToPlaceInstance(PLACE_ID, selected.id, player, teleportOptions)
-                end)
-                
-                if tpOk then
-                    log("[HOP] Teleport initiated! Waiting up to 3 minutes with anti-AFK movement...")
-                    -- Wait up to 3 minutes for teleport to complete
-                    local waitStart = tick()
-                    local maxWaitTime = 180  -- 3 minutes
-                    
-                    while tick() - waitStart < maxWaitTime do
-                        waitWithMovement(30)
-                        local elapsed = math.floor(tick() - waitStart)
-                        log("[HOP] Still waiting for teleport... (" .. elapsed .. "s/" .. maxWaitTime .. "s)")
-                    end
-                    
-                    -- If we're still here after 3 minutes, this server isn't working
-                    log("[HOP] Teleport timed out after 3 minutes, trying next server...")
-                    waitWithMovement(TELEPORT_RETRY_DELAY)
-                else
-                    log("[HOP] Teleport call failed: " .. tostring(err))
-                    log("[HOP] Trying next server in " .. TELEPORT_RETRY_DELAY .. "s...")
-                    waitWithMovement(TELEPORT_RETRY_DELAY)
+                while tick() - waitStart < maxWaitTime do
+                    waitWithMovement(30)
+                    local elapsed = math.floor(tick() - waitStart)
+                    log("[HOP] Still waiting for teleport... (" .. elapsed .. "s/" .. maxWaitTime .. "s)")
                 end
+                
+                -- If we're still here after 3 minutes, this server isn't working
+                log("[HOP] Teleport timed out after 3 minutes")
+                log("[HOP] Cooling down for " .. TELEPORT_COOLDOWN .. "s to avoid rate limiting...")
+                waitWithMovement(TELEPORT_COOLDOWN)
+            else
+                log("[HOP] Teleport call failed: " .. tostring(err))
+                log("[HOP] Cooling down for " .. TELEPORT_COOLDOWN .. "s...")
+                waitWithMovement(TELEPORT_COOLDOWN)
             end
             
-            -- If none of the servers worked, move to next page
+            -- Move to next page after trying one server
             if body.nextPageCursor then
                 cursor = body.nextPageCursor
-                log("[HOP] Tried top servers on this page, moving to next page...")
+                log("[HOP] Moving to next page...")
             else
-                log("[HOP] Exhausted all pages, starting over from page 1 in 10s...")
-                waitWithMovement(10)
+                log("[HOP] Exhausted all pages, starting over from page 1 after cooldown...")
+                waitWithMovement(TELEPORT_COOLDOWN)
                 cursor = ""
             end
         else
