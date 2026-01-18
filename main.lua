@@ -305,13 +305,11 @@ local function claimBooth()
         
         log("[BOOTH] Failed after 3 attempts, doing anti-AFK movement...")
         startCircleDance(3)
-        task.wait(3)
         log("[BOOTH] Moving to next booth...")
     end
     
     log("[BOOTH] All booths tried, doing anti-AFK movement before retrying...")
     startCircleDance(5)
-    task.wait(5)
     log("[BOOTH] Retrying from start...")
     return claimBooth()  -- Recursively retry until success
 end
@@ -391,20 +389,38 @@ local DIRECTION_KEYS = {
 }
 
 local function startCircleDance(duration)
-    log("[CIRCLE] Starting circle dance...")
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+    log("[CIRCLE] Starting circle dance for " .. duration .. " seconds...")
+    local success, err = pcall(function()
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
+    end)
+    if not success then
+        log("[CIRCLE] ERROR: Failed to start jump: " .. tostring(err))
+        return
+    end
+    
     local startTime = tick()
     local step = 1
-    task.spawn(function()
-        while tick() - startTime < duration do
+    while tick() - startTime < duration do
+        local keySuccess = pcall(function()
             for _, k in DIRECTION_KEYS[step] do VirtualInputManager:SendKeyEvent(true, k, false, game) end
-            task.wait(CIRCLE_STEP_TIME)
-            for _, k in DIRECTION_KEYS[step] do VirtualInputManager:SendKeyEvent(false, k, false, game) end
-            step = step % 8 + 1
+        end)
+        if not keySuccess then
+            log("[CIRCLE] ERROR: Failed to press keys")
         end
+        
+        task.wait(CIRCLE_STEP_TIME)
+        
+        pcall(function()
+            for _, k in DIRECTION_KEYS[step] do VirtualInputManager:SendKeyEvent(false, k, false, game) end
+        end)
+        
+        step = step % 8 + 1
+    end
+    
+    pcall(function()
         VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-        log("[CIRCLE] Done")
     end)
+    log("[CIRCLE] Done")
 end
 
 -- Wait with anti-AFK movement (circle dance every 10 seconds)
@@ -421,7 +437,6 @@ local function waitWithMovement(duration)
             task.wait(3)
             elapsed = elapsed + 3
         end
-    end
 end
 
 local isSprinting = false
