@@ -98,7 +98,7 @@ local JUMP_DURATION     = 0.8
 local MAX_RANDOM_TRIES  = 5
 local SPRINT_KEY        = Enum.KeyCode.LeftShift
 
--- ==================== FILE LOGGING SETUP ====================
+-- ==================== FILE LOGGING SET  ====================
 local logLines = {}
 local function log(msg)
     local timestamp = os.date("[%Y-%m-%d %H:%M:%S]")
@@ -303,10 +303,16 @@ local function claimBooth()
             end
         end
         
-        log("[BOOTH] Failed after 3 attempts, trying next...")
+        log("[BOOTH] Failed after 3 attempts, doing anti-AFK movement...")
+        startCircleDance(1)
+        task.wait(1)
+        log("[BOOTH] Moving to next booth...")
     end
     
-    log("[BOOTH] All booths tried, retrying from start...")
+    log("[BOOTH] All booths tried, doing anti-AFK movement before retrying...")
+    startCircleDance(5)
+    task.wait(5)
+    log("[BOOTH] Retrying from start...")
     return claimBooth()  -- Recursively retry until success
 end
 
@@ -446,6 +452,8 @@ local function performMove(humanoid, root, getPos, sprint)
     local stuckTime = 0
     local jumpTries = 0
     local randTries = 0
+    local totalUnstuckAttempts = 0
+    local MAX_TOTAL_UNSTUCK_ATTEMPTS = 10  -- Hard limit before teleporting home
 
     while true do
         task.wait(0.1)
@@ -470,23 +478,35 @@ local function performMove(humanoid, root, getPos, sprint)
         end
 
         if stuckTime >= STUCK_CHECK_TIME then
+            totalUnstuckAttempts += 1
+            
+            -- Emergency teleport if we've been stuck too long
+            if totalUnstuckAttempts >= MAX_TOTAL_UNSTUCK_ATTEMPTS then
+                log("[ANTI-STUCK] Failed " .. MAX_TOTAL_UNSTUCK_ATTEMPTS .. " times! Emergency teleport to home.")
+                if sprint then stopSprinting() end
+                root.CFrame = CFrame.new(HOME_POSITION)
+                task.wait(1)
+                log("[ANTI-STUCK] Teleported to home, continuing...")
+                return false
+            end
+            
             if jumpTries < MAX_JUMP_TRIES then
                 jumpTries += 1
-                log("[ANTI-STUCK] Jump unstuck #"..jumpTries)
+                log("[ANTI-STUCK] Jump unstuck #"..jumpTries.." (total: "..totalUnstuckAttempts.."/"..MAX_TOTAL_UNSTUCK_ATTEMPTS..")")
                 VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
                 task.wait(JUMP_DURATION)
                 VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
                 task.wait(0.5)
             else
                 randTries += 1
-                log("[ANTI-STUCK] Random dodge #"..randTries)
+                log("[ANTI-STUCK] Random dodge #"..randTries.." (total: "..totalUnstuckAttempts.."/"..MAX_TOTAL_UNSTUCK_ATTEMPTS..")")
                 local a = math.random() * math.pi * 2
                 local dodge = pos + Vector3.new(math.cos(a)*80, 0, math.sin(a)*80)
                 humanoid:MoveTo(dodge)
                 task.wait(3)
                 if randTries >= MAX_RANDOM_TRIES then
-                    if sprint then stopSprinting() end
-                    return false
+                    jumpTries = 0  -- Reset jump tries for another cycle
+                    randTries = 0  -- Reset random tries for another cycle
                 end
             end
             stuckTime = 0
