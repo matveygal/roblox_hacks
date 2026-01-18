@@ -304,8 +304,8 @@ local function claimBooth()
         end
         
         log("[BOOTH] Failed after 3 attempts, doing anti-AFK movement...")
-        startCircleDance(1)
-        task.wait(1)
+        startCircleDance(3)
+        task.wait(3)
         log("[BOOTH] Moving to next booth...")
     end
     
