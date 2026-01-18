@@ -215,6 +215,17 @@ local function verifyClaim(boothLocation, boothNum)
     return string.find(ownerText, player.DisplayName) ~= nil or string.find(ownerText, player.Name) ~= nil
 end
 
+local function walkRandomDirection(studs, waitTime)
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    if root and humanoid then
+        local angle = math.random() * math.pi * 2
+        local movePos = root.Position + Vector3.new(math.cos(angle)*studs, 0, math.sin(angle)*studs)
+        humanoid:MoveTo(movePos)
+        task.wait(waitTime)
+    end
+end
+
 local function claimBooth()
     log("=== BOOTH CLAIMER ===")
     local boothLocation = getBoothLocation()
@@ -307,15 +318,13 @@ local function claimBooth()
             end
         end
         
-        log("[BOOTH] Failed after 3 attempts, doing anti-AFK movement...")
-        startCircleDance(1)
-        task.wait(1)
+        log("[BOOTH] Failed after 3 attempts, moving away from booth...")
+        walkRandomDirection(20, 2)
         log("[BOOTH] Moving to next booth...")
     end
     
-    log("[BOOTH] All booths tried, doing anti-AFK movement before retrying...")
-    startCircleDance(5)
-    task.wait(5)
+    log("[BOOTH] All booths tried, moving away before retrying...")
+    walkRandomDirection(30, 3)
     log("[BOOTH] Retrying from start...")
     return claimBooth()  -- Recursively retry until success
 end
