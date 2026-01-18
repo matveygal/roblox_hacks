@@ -316,14 +316,7 @@ local function claimBooth()
     return claimBooth()  -- Recursively retry until success
 end
 
--- CLAIM BOOTH AND SET HOME POSITION
-local HOME_POSITION = claimBooth()
-if not HOME_POSITION then
-    log("[BOOTH] Failed to claim booth! Using default position.")
-    HOME_POSITION = Vector3.new(94, 4, 281)  -- Fallback position
-end
-log("=== HOME SET TO: " .. tostring(HOME_POSITION) .. " ===")
-saveLog()
+-- HOME_POSITION will be set later after all functions are defined
 
 -- ==================== SOCIAL BOT LOGIC ====================
 -- ========= CHAT LOGGER + RESPONSE DETECTION =========
@@ -838,6 +831,15 @@ if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart
     player.CharacterAdded:Wait()
     task.wait(2)
 end
+
+-- CLAIM BOOTH AND SET HOME POSITION
+local HOME_POSITION = claimBooth()
+if not HOME_POSITION then
+    log("[BOOTH] Failed to claim booth! Using default position.")
+    HOME_POSITION = Vector3.new(94, 4, 281)  -- Fallback position
+end
+log("=== HOME SET TO: " .. tostring(HOME_POSITION) .. " ===")
+saveLog()
 
 -- Main loop: greet everyone, then hop (server hop never returns, it keeps trying)
 while nextPlayer() do end
