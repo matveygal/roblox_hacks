@@ -96,15 +96,16 @@ local STUCK_CHECK_TIME  = 4
 local MAX_JUMP_TRIES    = 3
 local JUMP_DURATION     = 0.8
 local MAX_RANDOM_TRIES  = 5
+local MAX_STUCK_BEFORE_HOP = 3                         -- Server hop if stuck 3 times in a row
 local SPRINT_KEY        = Enum.KeyCode.LeftShift
 
--- ==================== FILE LOGGING SETUP ====================
+-- Track consecutive stuck failures
+local consecutiveStuckCount = 0
+
+-- ==================== FILE LOGGING SET  ====================
 local logLines = {}
 local function log(msg)
-    local timestamp = "[" .. tostring(os.time()) .. "]"
-    pcall(function()
-        timestamp = os.date("[%Y-%m-%d %H:%M:%S]")
-    end)
+    local timestamp = os.date("[%Y-%m-%d %H:%M:%S]")
     local logMsg = timestamp .. " " .. msg
     print(logMsg)  -- Still print to console for debugging
     table.insert(logLines, logMsg)
@@ -112,9 +113,7 @@ end
 
 local function saveLog()
     local content = table.concat(logLines, "\n")
-    pcall(function()
-        writefile("donation_bot.log", content)
-    end)
+    writefile("donation_bot.log", content)
 end
 
 -- Auto-save log every 30 seconds
@@ -309,17 +308,26 @@ local function claimBooth()
         end
         
         log("[BOOTH] Failed after 3 attempts, doing anti-AFK movement...")
-        startCircleDance(3)
+        startCircleDance(1)
+        task.wait(1)
         log("[BOOTH] Moving to next booth...")
     end
     
     log("[BOOTH] All booths tried, doing anti-AFK movement before retrying...")
     startCircleDance(5)
+    task.wait(5)
     log("[BOOTH] Retrying from start...")
     return claimBooth()  -- Recursively retry until success
 end
 
--- HOME_POSITION will be set later after all functions are defined
+-- CLAIM BOOTH AND SET HOME POSITION
+local HOME_POSITION = claimBooth()
+if not HOME_POSITION then
+    log("[BOOTH] Failed to claim booth! Using default position.")
+    HOME_POSITION = Vector3.new(94, 4, 281)  -- Fallback position
+end
+log("=== HOME SET TO: " .. tostring(HOME_POSITION) .. " ===")
+saveLog()
 
 -- ==================== SOCIAL BOT LOGIC ====================
 -- ========= CHAT LOGGER + RESPONSE DETECTION =========
@@ -394,38 +402,20 @@ local DIRECTION_KEYS = {
 }
 
 local function startCircleDance(duration)
-    log("[CIRCLE] Starting circle dance for " .. duration .. " seconds...")
-    local success, err = pcall(function()
-        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-    end)
-    if not success then
-        log("[CIRCLE] ERROR: Failed to start jump: " .. tostring(err))
-        return
-    end
-    
+    log("[CIRCLE] Starting circle dance...")
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
     local startTime = tick()
     local step = 1
-    while tick() - startTime < duration do
-        local keySuccess = pcall(function()
+    task.spawn(function()
+        while tick() - startTime < duration do
             for _, k in DIRECTION_KEYS[step] do VirtualInputManager:SendKeyEvent(true, k, false, game) end
-        end)
-        if not keySuccess then
-            log("[CIRCLE] ERROR: Failed to press keys")
-        end
-        
-        task.wait(CIRCLE_STEP_TIME)
-        
-        pcall(function()
+            task.wait(CIRCLE_STEP_TIME)
             for _, k in DIRECTION_KEYS[step] do VirtualInputManager:SendKeyEvent(false, k, false, game) end
-        end)
-        
-        step = step % 8 + 1
-    end
-    
-    pcall(function()
+            step = step % 8 + 1
+        end
         VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
+        log("[CIRCLE] Done")
     end)
-    log("[CIRCLE] Done")
 end
 
 -- Wait with anti-AFK movement (circle dance every 10 seconds)
@@ -442,6 +432,7 @@ local function waitWithMovement(duration)
             task.wait(3)
             elapsed = elapsed + 3
         end
+    end
 end
 
 local isSprinting = false
@@ -465,8 +456,6 @@ local function performMove(humanoid, root, getPos, sprint)
     local stuckTime = 0
     local jumpTries = 0
     local randTries = 0
-    local totalUnstuckAttempts = 0
-    local MAX_TOTAL_UNSTUCK_ATTEMPTS = 10  -- Hard limit before teleporting home
 
     while true do
         task.wait(0.1)
@@ -478,6 +467,8 @@ local function performMove(humanoid, root, getPos, sprint)
         end
         if (root.Position - pos).Magnitude <= TARGET_DISTANCE then
             if sprint then stopSprinting() end
+            -- Reset stuck counter on successful movement
+            consecutiveStuckCount = 0
             return true
         end
 
@@ -491,35 +482,34 @@ local function performMove(humanoid, root, getPos, sprint)
         end
 
         if stuckTime >= STUCK_CHECK_TIME then
-            totalUnstuckAttempts += 1
-            
-            -- Emergency teleport if we've been stuck too long
-            if totalUnstuckAttempts >= MAX_TOTAL_UNSTUCK_ATTEMPTS then
-                log("[ANTI-STUCK] Failed " .. MAX_TOTAL_UNSTUCK_ATTEMPTS .. " times! Emergency teleport to home.")
-                if sprint then stopSprinting() end
-                root.CFrame = CFrame.new(HOME_POSITION)
-                task.wait(1)
-                log("[ANTI-STUCK] Teleported to home, continuing...")
-                return false
-            end
-            
             if jumpTries < MAX_JUMP_TRIES then
                 jumpTries += 1
-                log("[ANTI-STUCK] Jump unstuck #"..jumpTries.." (total: "..totalUnstuckAttempts.."/"..MAX_TOTAL_UNSTUCK_ATTEMPTS..")")
+                log("[ANTI-STUCK] Jump unstuck #"..jumpTries)
                 VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
                 task.wait(JUMP_DURATION)
                 VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
                 task.wait(0.5)
             else
                 randTries += 1
-                log("[ANTI-STUCK] Random dodge #"..randTries.." (total: "..totalUnstuckAttempts.."/"..MAX_TOTAL_UNSTUCK_ATTEMPTS..")")
+                log("[ANTI-STUCK] Random dodge #"..randTries)
                 local a = math.random() * math.pi * 2
                 local dodge = pos + Vector3.new(math.cos(a)*80, 0, math.sin(a)*80)
                 humanoid:MoveTo(dodge)
                 task.wait(3)
                 if randTries >= MAX_RANDOM_TRIES then
-                    jumpTries = 0  -- Reset jump tries for another cycle
-                    randTries = 0  -- Reset random tries for another cycle
+                    log("[ANTI-STUCK] Failed to unstuck after all attempts!")
+                    consecutiveStuckCount = consecutiveStuckCount + 1
+                    log("[ANTI-STUCK] Consecutive stuck count: " .. consecutiveStuckCount .. "/" .. MAX_STUCK_BEFORE_HOP)
+                    
+                    if consecutiveStuckCount >= MAX_STUCK_BEFORE_HOP then
+                        log("[ANTI-STUCK] Too many stuck failures! Initiating server hop...")
+                        saveLog()
+                        if sprint then stopSprinting() end
+                        serverHop()  -- This never returns
+                    end
+                    
+                    if sprint then stopSprinting() end
+                    return false
                 end
             end
             stuckTime = 0
@@ -851,15 +841,6 @@ if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart
     player.CharacterAdded:Wait()
     task.wait(2)
 end
-
--- CLAIM BOOTH AND SET HOME POSITION
-local HOME_POSITION = claimBooth()
-if not HOME_POSITION then
-    log("[BOOTH] Failed to claim booth! Using default position.")
-    HOME_POSITION = Vector3.new(94, 4, 281)  -- Fallback position
-end
-log("=== HOME SET TO: " .. tostring(HOME_POSITION) .. " ===")
-saveLog()
 
 -- Main loop: greet everyone, then hop (server hop never returns, it keeps trying)
 while nextPlayer() do end
