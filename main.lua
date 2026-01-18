@@ -98,10 +98,13 @@ local JUMP_DURATION     = 0.8
 local MAX_RANDOM_TRIES  = 5
 local SPRINT_KEY        = Enum.KeyCode.LeftShift
 
--- ==================== FILE LOGGING SET  ====================
+-- ==================== FILE LOGGING SETUP ====================
 local logLines = {}
 local function log(msg)
-    local timestamp = os.date("[%Y-%m-%d %H:%M:%S]")
+    local timestamp = "[" .. tostring(os.time()) .. "]"
+    pcall(function()
+        timestamp = os.date("[%Y-%m-%d %H:%M:%S]")
+    end)
     local logMsg = timestamp .. " " .. msg
     print(logMsg)  -- Still print to console for debugging
     table.insert(logLines, logMsg)
@@ -109,7 +112,9 @@ end
 
 local function saveLog()
     local content = table.concat(logLines, "\n")
-    writefile("donation_bot.log", content)
+    pcall(function()
+        writefile("donation_bot.log", content)
+    end)
 end
 
 -- Auto-save log every 30 seconds
