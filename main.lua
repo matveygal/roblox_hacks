@@ -514,7 +514,7 @@ local function performMove(humanoid, root, getPos, sprint)
                         log("[ANTI-STUCK] Too many stuck failures! Initiating server hop...")
                         saveLog()
                         if sprint then stopSprinting() end
-                        serverHop()  -- This never returns
+                        serverHop(true)  -- Pass true to skip returnHome since we're stuck
                     end
                     
                     if sprint then stopSprinting() end
@@ -710,12 +710,18 @@ local function nextPlayer()
 end
 
 -- ==================== SERVER HOP FUNCTION ====================
-local function serverHop()
+local function serverHop(skipReturnHome)
     log("[HOP] Starting server hop...")
     
-    -- First return home before hopping
-    returnHome()
-    task.wait(1)
+    -- Return home before hopping (unless we're stuck and can't move)
+    if not skipReturnHome then
+        returnHome()
+        task.wait(1)
+    else
+        log("[HOP] Skipping returnHome due to stuck state")
+        -- Just do some anti-AFK movement instead
+        walkRandomDirection(10, 2)
+    end
     
     local cursor = ""
     
