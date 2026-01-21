@@ -715,14 +715,26 @@ local function serverHop(skipReturnHome)
     
     -- Return home before hopping (unless we're stuck and can't move)
     if not skipReturnHome then
-        returnHome()
+        local success = returnHome()
+        if not success then
+            log("[HOP] returnHome failed, continuing anyway...")
+        end
         task.wait(1)
     else
-        log("[HOP] Skipping returnHome due to stuck state")
-        -- Just do some anti-AFK movement instead
-        walkRandomDirection(10, 2)
+        log("[HOP] Skipping returnHome due to stuck state, doing keyboard movement")
+        -- Use keyboard input instead of MoveTo since we're stuck
+        task.spawn(function()
+            for i = 1, 20 do
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.W, false, game)
+                task.wait(0.1)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.W, false, game)
+                task.wait(0.1)
+            end
+        end)
+        task.wait(2)
     end
     
+    log("[HOP] Beginning server search...")
     local cursor = ""
     
     while true do
