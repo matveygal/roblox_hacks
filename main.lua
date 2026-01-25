@@ -512,9 +512,16 @@ local function performMove(humanoid, root, getPos, sprint)
                     
                     if consecutiveStuckCount >= MAX_STUCK_BEFORE_HOP then
                         log("[ANTI-STUCK] Too many stuck failures! Initiating server hop...")
-                        saveLog()
+                        log("[ANTI-STUCK] Saving log before hop...")
+                        pcall(saveLog)  -- Use pcall in case it errors
+                        log("[ANTI-STUCK] Stopping sprint...")
                         if sprint then stopSprinting() end
-                        serverHop(true)  -- Pass true to skip returnHome since we're stuck
+                        log("[ANTI-STUCK] Calling serverHop(true) now...")
+                        -- Don't return! Let serverHop's infinite loop take over
+                        serverHop(true)
+                        -- Should never reach here since serverHop never returns
+                        log("[ANTI-STUCK] ERROR: serverHop returned unexpectedly!")
+                        return false
                     end
                     
                     if sprint then stopSprinting() end
