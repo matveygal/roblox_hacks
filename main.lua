@@ -446,6 +446,9 @@ end
 
 local isSprinting = false
 
+-- Forward declaration so performMove can call it
+local serverHop
+
 local function startSprinting()
     if isSprinting then return end
     VirtualInputManager:SendKeyEvent(true, SPRINT_KEY, false, game)
@@ -717,7 +720,7 @@ local function nextPlayer()
 end
 
 -- ==================== SERVER HOP FUNCTION ====================
-local function serverHop(skipReturnHome)
+function serverHop(skipReturnHome)
     log("[HOP] Starting server hop...")
     
     -- Return home before hopping (unless we're stuck and can't move)
