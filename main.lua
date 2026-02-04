@@ -748,7 +748,7 @@ function serverHop(skipReturnHome)
     local cursor = ""
     
     while true do
-        task.wait(2)  -- Rate limit protection
+        task.wait(5)  -- Increased from 2 to 5 seconds to reduce request rate
         
         local url = string.format(
             "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100%s",
@@ -766,6 +766,14 @@ function serverHop(skipReturnHome)
                 log("[HOP DEBUG] Request error: " .. tostring(response))
             end
             waitWithMovement(5)
+            continue
+        end
+        
+        -- Check for 429 Too Many Requests
+        if response.StatusCode == 429 then
+            log("[HOP] ⚠️ 429 Too Many Requests! Cooling down for 60 seconds...")
+            waitWithMovement(60)
+            cursor = ""  -- Start over from first page
             continue
         end
         
