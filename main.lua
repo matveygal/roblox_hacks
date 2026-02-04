@@ -745,10 +745,24 @@ function serverHop(skipReturnHome)
     end
     
     log("[HOP] Beginning server search...")
+    
+    -- Add random startup delay to stagger multiple accounts (0-30 seconds)
+    local startupDelay = math.random(0, 30)
+    log("[HOP] Random startup delay: " .. startupDelay .. "s to avoid rate limiting...")
+    waitWithMovement(startupDelay)
+    
     local cursor = ""
+    local requestCount = 0
     
     while true do
-        task.wait(5)  -- Increased from 2 to 5 seconds to reduce request rate
+        -- Exponential backoff: longer waits after more requests
+        local baseDelay = math.min(10 + requestCount, 30)  -- 10s base, up to 30s max
+        local randomDelay = math.random(0, 5)  -- Add 0-5s random
+        local totalDelay = baseDelay + randomDelay
+        
+        log("[HOP] Waiting " .. totalDelay .. "s before next request (request #" .. (requestCount + 1) .. ")...")
+        waitWithMovement(totalDelay)
+        requestCount = requestCount + 1
         
         local url = string.format(
             "https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100%s",
@@ -761,24 +775,28 @@ function serverHop(skipReturnHome)
         end)
         
         if not success or not response then
-            log("[HOP] HTTP request failed, retrying in 5s...")
+            log("[HOP] HTTP request failed, retrying...")
             if not success then
                 log("[HOP DEBUG] Request error: " .. tostring(response))
             end
-            waitWithMovement(5)
+            requestCount = 0  -- Reset counter on failure
+            waitWithMovement(10)
             continue
         end
         
         -- Check for 429 Too Many Requests
         if response.StatusCode == 429 then
-            log("[HOP] ⚠️ 429 Too Many Requests! Cooling down for 60 seconds...")
-            waitWithMovement(60)
+            log("[HOP] ⚠️ 429 Too Many Requests! Cooling down for 2 minutes...")
+            requestCount = 0  -- Reset counter
+            waitWithMovement(120)  -- 2 minute cooldown
             cursor = ""  -- Start over from first page
             continue
         end
         
-        if not response.Body then
-            log("[HOP] Response has no Body field! Likely rate-limited by Roblox.")
+        if not response.Body the minutes before retrying...")
+            requestCount = 0
+            waitWithMovement(120)
+            cursor = ""  -- Reset to first pagehas no Body field! Likely rate-limited by Roblox.")
             log("[HOP] Waiting 20 seconds before retrying...")
             waitWithMovement(20)
             continue
@@ -794,9 +812,13 @@ function serverHop(skipReturnHome)
             if response then
                 log("[HOP DEBUG] Response status: " .. tostring(response.StatusCode or "N/A"))
                 log("[HOP DEBUG] Response body type: " .. type(response.Body))
-                log("[HOP DEBUG] Response body length: " .. #tostring(response.Body))
-            end
-            waitWithMovement(5)
+            requestCount = 0
+            waitWithMovement(10)
+            continue
+        end
+        
+        -- Reset request count on successful parse
+        requestCount = 0 waitWithMovement(5)
             continue
         end
         
