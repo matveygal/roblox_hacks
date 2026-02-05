@@ -2,12 +2,18 @@
 -- Use this to spread accounts across different servers before running main bot
 
 local PLACE_ID = 8737602449
+local SCRIPT_URL = "https://cdn.jsdelivr.net/gh/matveygal/roblox_hacks@main/main.lua"
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local player = Players.LocalPlayer
 
 local httprequest = (syn and syn.request) or http and http.request or http_request or (fluxus and fluxus.request) or request
+local queueFunc = queueonteleport or queue_on_teleport or (syn and syn.queue_on_teleport)
+
+if not queueFunc then
+    print("⚠️ queueonteleport not supported by this executor; main script won't auto-run after hop")
+end
 
 print("═══════════════════════════════════════")
 print("🔄 QUICK SERVER HOP")
@@ -55,6 +61,11 @@ local selected = servers[math.random(#servers)]
 print("✅ Found " .. #servers .. " servers")
 print("🎯 Hopping to: " .. selected.id)
 print("👥 Players: " .. (selected.playing or "?") .. "/" .. (selected.maxPlayers or "?"))
+
+if queueFunc then
+    print("🧾 Queuing main script for next server...")
+    queueFunc('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
+end
 
 task.wait(2)
 
