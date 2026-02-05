@@ -96,7 +96,7 @@ print("[TEST] Queuing script for next server...")
 queueFunc([[
     _G.ServerHopTestRan = true
     task.wait(3)
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/matveygal/roblox_hacks/main/serverhop_test.lua"))()
+    loadstring(game:HttpGet("https://cdn.jsdelivr.net/gh/matveygal/roblox_hacks@main/serverhop_test.lua"))()
 ]])
 
 print("[TEST] Attempting teleport...")

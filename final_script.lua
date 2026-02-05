@@ -19,7 +19,7 @@
 local PLACE_ID = 8737602449                            -- Please Donate place ID
 local MIN_PLAYERS = 13                                 -- Minimum players in server
 local MAX_PLAYERS_ALLOWED = 24                         -- Maximum players in server
-local SCRIPT_URL = "https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"
+local SCRIPT_URL = "https://cdn.jsdelivr.net/gh/matveygal/roblox_hacks@main/main.lua"
 
 local BOOTH_CHECK_POSITION = Vector3.new(165, 0, 311)  -- Center point to search for booths
 local MAX_BOOTH_DISTANCE = 92                          -- Max studs from check position

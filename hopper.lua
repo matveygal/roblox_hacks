@@ -138,7 +138,7 @@ local function infiniteHop()
                         print("[HOP] Trying server " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
                         
                         -- Queue itself for the next server
-                        queueFunc('loadstring(game:HttpGet("https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"))()')
+                        queueFunc('loadstring(game:HttpGet("https://cdn.jsdelivr.net/gh/matveygal/roblox_hacks@main/main.lua"))()')
                         
                         local tpOk, err = pcall(function()
                             TPService:TeleportToPlaceInstance(PlaceId, selected.id, Players.LocalPlayer)

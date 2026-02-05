@@ -4,7 +4,7 @@ local MIN_PLAYERS = 4                                  -- Minimum players in ser
 local MAX_PLAYERS_ALLOWED = 24                         -- Maximum players in server
 local TELEPORT_RETRY_DELAY = 8                         -- Delay between teleport attempts (increased from 4)
 local TELEPORT_COOLDOWN = 30                           -- Cooldown between failed servers to avoid rate limit detection
-local SCRIPT_URL = "https://raw.githubusercontent.com/matveygal/roblox_hacks/main/main.lua"
+local SCRIPT_URL = "https://cdn.jsdelivr.net/gh/matveygal/roblox_hacks@main/main.lua"
 
 local BOOTH_CHECK_POSITION = Vector3.new(165, 0, 311)  -- Center point to search for booths
 local MAX_BOOTH_DISTANCE = 92                          -- Max studs from check position
@@ -793,12 +793,12 @@ function serverHop(skipReturnHome)
             continue
         end
         
-        if not response.Body the minutes before retrying...")
+        if not response.Body then
+            log("[HOP] Response has no Body field! Likely rate-limited by Roblox.")
+            log("[HOP] Waiting 2 minutes before retrying...")
             requestCount = 0
             waitWithMovement(120)
-            cursor = ""  -- Reset to first pagehas no Body field! Likely rate-limited by Roblox.")
-            log("[HOP] Waiting 20 seconds before retrying...")
-            waitWithMovement(20)
+            cursor = ""  -- Reset to first page
             continue
         end
         
