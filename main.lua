@@ -838,8 +838,17 @@ function serverHop(skipReturnHome)
             local maxP = selected.maxPlayers or "?"
             log("[HOP] Trying server: " .. selected.id .. " (" .. playing .. "/" .. maxP .. ")")
             
-            -- Queue script for next server
-            queueFunc('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
+            -- Queue script for next server (use httprequest since game:HttpGet returns nil on some executors)
+            queueFunc([[
+local httprequest = (syn and syn.request) or http and http.request or http_request or (fluxus and fluxus.request) or request
+local response = httprequest({Url = "]] .. SCRIPT_URL .. [["})
+if response and response.Body then
+    loadstring(response.Body)()
+else
+    -- Fallback to game:HttpGet
+    loadstring(game:HttpGet("]] .. SCRIPT_URL .. [["))()
+end
+]])
             
             -- Attempt teleport
             local teleportOptions = Instance.new("TeleportOptions")
