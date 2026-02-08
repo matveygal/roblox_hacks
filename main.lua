@@ -135,6 +135,20 @@ local HttpService           = game:GetService("HttpService")
 local player                = Players.LocalPlayer
 local ignoreList = {}
 
+-- Bot accounts to always ignore
+local BOT_ACCOUNTS = {
+    ["ExplorerCrusher292"] = true,
+    ["ColorCrusher292"] = true,
+    ["AquaCrusher292"] = true,
+    ["PillageCrusher292"] = true,
+    ["BeeCrusher292"] = true,
+    ["NetherCrusher292"] = true,
+    ["CaveCrusher292"] = true,
+    ["CliffCrusher292"] = true,
+    ["WildCrusher292"] = true,
+    ["TrailCrusher292"] = true,
+}
+
 local httprequest = (syn and syn.request) or http and http.request or http_request or (fluxus and fluxus.request) or request
 local queueFunc = queueonteleport or queue_on_teleport or (syn and syn.queue_on_teleport) or function() log("[HOP] Queue not supported!") end
 
@@ -598,7 +612,7 @@ local function findClosest()
         return nil
     end
     for _, p in ipairs(allPlayers) do
-        if p and p ~= player and p.UserId and not ignoreList[p.UserId] and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+        if p and p ~= player and p.UserId and not ignoreList[p.UserId] and not BOT_ACCOUNTS[p.Name] and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
             local path = PathfindingService:CreatePath()
             path:ComputeAsync(root.Position, p.Character.HumanoidRootPart.Position)
             if path.Status == Enum.PathStatus.Success then
